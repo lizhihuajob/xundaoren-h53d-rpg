@@ -375,6 +375,11 @@ class Game {
             this.ui.updateTargetFrame(null);
         });
         
+        // 鼠标悬停提示
+        this.input.on('mousemove', (mouse, event) => {
+            this.handleMouseHover(mouse, event);
+        });
+        
         // 技能快捷键
         this.input.on('keydown', (key) => {
             if (this.ui.isDialogOpen) return;
@@ -388,6 +393,63 @@ class Game {
                 }
             }
         });
+    }
+
+    /**
+     * 处理鼠标悬停
+     */
+    handleMouseHover(mouse, event) {
+        if (this.ui.isDialogOpen) {
+            this.ui.hideHoverTooltip();
+            return;
+        }
+        
+        const intersects = this.renderer.raycast(
+            { x: mouse.x, y: mouse.y },
+            this.world.getHoverableObjects()
+        );
+        
+        if (intersects.length > 0) {
+            const hit = intersects[0].object;
+            const userData = hit.userData;
+            
+            if (userData && userData.tooltipInfo) {
+                this.ui.showHoverTooltip(
+                    event.clientX,
+                    event.clientY,
+                    userData.tooltipInfo
+                );
+            } else if (userData && userData.entity) {
+                const entity = userData.entity;
+                let info = null;
+                
+                if (userData.type === 'monster' && !entity.isDead) {
+                    info = {
+                        name: entity.name,
+                        type: `Lv.${entity.level} 怪物`,
+                        desc: `HP: ${Math.floor(entity.hp)}/${entity.maxHp}`,
+                        category: 'monster'
+                    };
+                } else if (userData.type === 'npc') {
+                    info = {
+                        name: entity.name,
+                        type: entity.title || 'NPC',
+                        desc: '点击进行交互',
+                        category: 'npc'
+                    };
+                }
+                
+                if (info) {
+                    this.ui.showHoverTooltip(event.clientX, event.clientY, info);
+                } else {
+                    this.ui.hideHoverTooltip();
+                }
+            } else {
+                this.ui.hideHoverTooltip();
+            }
+        } else {
+            this.ui.hideHoverTooltip();
+        }
     }
 
     /**

@@ -160,31 +160,52 @@ export default class StarterVillage {
      * 创建装饰物
      */
     createDecorations() {
+        this.decorations = [];
+        
         // 树木（圆锥 + 圆柱）
         const treePositions = [
             { x: -10, z: 15 },
             { x: 10, z: 18 },
             { x: -8, z: -8 },
             { x: 8, z: -10 },
-            { x: -20, z: 8 }
+            { x: -20, z: 8 },
+            { x: 15, z: -15 },
+            { x: -15, z: -12 }
         ];
         
-        treePositions.forEach(pos => {
+        treePositions.forEach((pos, index) => {
+            const treeGroup = new THREE.Group();
+            treeGroup.position.set(pos.x, 0, pos.z);
+            
             // 树干
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 1.5, 8);
             const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-            trunk.position.set(pos.x, 0.75, pos.z);
+            trunk.position.y = 0.75;
             trunk.castShadow = true;
-            this.scene.add(trunk);
+            treeGroup.add(trunk);
             
             // 树冠
             const crownGeometry = new THREE.ConeGeometry(1.5, 3, 8);
             const crownMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
             const crown = new THREE.Mesh(crownGeometry, crownMaterial);
-            crown.position.set(pos.x, 3, pos.z);
+            crown.position.y = 3;
             crown.castShadow = true;
-            this.scene.add(crown);
+            treeGroup.add(crown);
+            
+            treeGroup.userData = {
+                type: 'decoration',
+                subType: 'tree',
+                tooltipInfo: {
+                    name: '古松',
+                    type: '灵木',
+                    desc: '村中老树，据说有百年树龄',
+                    category: 'tree'
+                }
+            };
+            
+            this.scene.add(treeGroup);
+            this.decorations.push(treeGroup);
         });
         
         // 岩石
@@ -194,14 +215,27 @@ export default class StarterVillage {
             { x: 5, z: -20, s: 1.2 }
         ];
         
-        rockPositions.forEach(pos => {
+        rockPositions.forEach((pos, index) => {
             const geometry = new THREE.DodecahedronGeometry(pos.s);
             const material = new THREE.MeshLambertMaterial({ color: 0x696969 });
             const rock = new THREE.Mesh(geometry, material);
             rock.position.set(pos.x, pos.s * 0.5, pos.z);
             rock.rotation.set(Math.random(), Math.random(), Math.random());
             rock.castShadow = true;
+            
+            rock.userData = {
+                type: 'decoration',
+                subType: 'rock',
+                tooltipInfo: {
+                    name: '灵石',
+                    type: '矿石',
+                    desc: '蕴含微弱灵气的石头',
+                    category: 'rock'
+                }
+            };
+            
             this.scene.add(rock);
+            this.decorations.push(rock);
         });
     }
 
@@ -277,6 +311,45 @@ export default class StarterVillage {
         
         this.monsters.forEach(monster => {
             if (monster.mesh && !monster.isDead) objects.push(monster.mesh);
+        });
+        
+        return objects;
+    }
+
+    /**
+     * 获取可悬停提示的对象
+     */
+    getHoverableObjects() {
+        const objects = [];
+        
+        // NPC
+        this.npcs.forEach(npc => {
+            if (npc.mesh) objects.push(npc.mesh);
+        });
+        
+        // 怪物
+        this.monsters.forEach(monster => {
+            if (monster.mesh && !monster.isDead) objects.push(monster.mesh);
+        });
+        
+        // 装饰物（树木、岩石等）
+        if (this.decorations) {
+            this.decorations.forEach(deco => {
+                objects.push(deco);
+            });
+        }
+        
+        // 建筑物
+        this.buildings.forEach(building => {
+            if (building.userData && building.userData.name) {
+                building.userData.tooltipInfo = {
+                    name: building.userData.name,
+                    type: '建筑',
+                    desc: building.userData.name === '铁匠铺' ? '可以打造和修理装备' : '修炼心法之地',
+                    category: 'building'
+                };
+                objects.push(building);
+            }
         });
         
         return objects;

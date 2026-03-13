@@ -728,4 +728,46 @@ export default class UIManager {
             }
         });
     }
+
+    /**
+     * 显示悬停提示框
+     */
+    showHoverTooltip(x, y, info) {
+        const tooltip = document.getElementById('hover-tooltip');
+        if (!tooltip) return;
+        
+        tooltip.className = '';
+        tooltip.classList.add(`tooltip-${info.category || 'default'}`);
+        
+        tooltip.querySelector('.tooltip-name').textContent = info.name || '';
+        tooltip.querySelector('.tooltip-type').textContent = info.type || '';
+        tooltip.querySelector('.tooltip-desc').textContent = info.desc || '';
+        
+        const offsetX = 15;
+        const offsetY = 15;
+        let posX = x + offsetX;
+        let posY = y + offsetY;
+        
+        const tooltipRect = tooltip.getBoundingClientRect();
+        if (posX + tooltipRect.width > window.innerWidth) {
+            posX = x - tooltipRect.width - offsetX;
+        }
+        if (posY + tooltipRect.height > window.innerHeight) {
+            posY = y - tooltipRect.height - offsetY;
+        }
+        
+        tooltip.style.left = `${posX}px`;
+        tooltip.style.top = `${posY}px`;
+        tooltip.classList.remove('hidden');
+    }
+
+    /**
+     * 隐藏悬停提示框
+     */
+    hideHoverTooltip() {
+        const tooltip = document.getElementById('hover-tooltip');
+        if (tooltip) {
+            tooltip.classList.add('hidden');
+        }
+    }
 }
