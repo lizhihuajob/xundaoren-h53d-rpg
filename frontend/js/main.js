@@ -345,16 +345,16 @@ class Game {
         // 鼠标点击选中目标
         this.input.on('click', (mouse, event) => {
             if (this.ui.isDialogOpen) return;
-            
+
             const intersects = this.renderer.raycast(
                 { x: mouse.x, y: mouse.y },
                 this.world.getSelectableObjects()
             );
-            
+
             if (intersects.length > 0) {
                 const hit = intersects[0].object;
                 const entity = hit.userData.entity;
-                
+
                 if (entity) {
                     if (hit.userData.type === 'monster' && !entity.isDead) {
                         this.combat.setTarget(entity);
@@ -368,11 +368,16 @@ class Game {
                 this.ui.updateTargetFrame(null);
             }
         });
-        
+
         // 右键丢弃目标
         this.input.on('rightclick', () => {
             this.combat.clearTarget();
             this.ui.updateTargetFrame(null);
+        });
+
+        // 鼠标悬停事件
+        this.input.on('hover', (current, previous) => {
+            this.handleHoverChange(current, previous);
         });
         
         // 技能快捷键
@@ -452,7 +457,10 @@ class Game {
         if (this.effects) {
             this.effects.update(deltaTime);
         }
-        
+
+        // 检测鼠标悬停
+        this.checkHover();
+
         // 更新UI
         this.ui.updatePlayerHUD(this.player);
         this.ui.updateSkillBar(this.player);
@@ -480,6 +488,104 @@ class Game {
      */
     render() {
         this.renderer.render();
+    }
+
+    /**
+     * 检测鼠标悬停
+     */
+    checkHover() {
+        const mouse = this.input.mouse;
+
+        // 获取所有可交互对象（包括装饰物）
+        const objects = this.world.getAllInteractableObjects();
+
+        const intersects = this.renderer.raycast(
+            { x: mouse.x, y: mouse.y },
+            objects
+        );
+
+        let hoveredObject = null;
+        if (intersects.length > 0) {
+            const hit = intersects[0].object;
+            // 向上查找到包含 userData 的父对象
+            let target = hit;
+            while (target && !target.userData?.type && target.parent) {
+                target = target.parent;
+            }
+            if (target?.userData?.type) {
+                hoveredObject = target;
+            }
+        }
+
+        this.input.handleHover(hoveredObject);
+    }
+
+    /**
+     * 处理悬停变化
+     */
+    handleHoverChange(current, previous) {
+        const tooltip = document.getElementById('tooltip');
+        const tooltipName = document.getElementById('tooltip-name');
+        const tooltipDesc = document.getElementById('tooltip-desc');
+
+        if (!current) {
+            tooltip.classList.add('hidden');
+            return;
+        }
+
+        const type = current.userData.type;
+        const entity = current.userData.entity;
+
+        let name = '';
+        let desc = '';
+
+        switch (type) {
+            case 'npc':
+                name = entity.name;
+                desc = entity.title || 'NPC';
+                break;
+            case 'monster':
+                name = `${entity.name} (Lv.${entity.level})`;
+                desc = entity.isDead ? '已死亡' : '点击进行攻击';
+                break;
+            case 'building':
+                name = entity.name;
+                desc = '建筑物';
+                break;
+            case 'tree':
+                name = '灵树';
+                desc = '散发着淡淡灵气的树木';
+                break;
+            case 'rock':
+                name = '岩石';
+                desc = '普通的岩石';
+                break;
+            default:
+                return;
+        }
+
+        tooltipName.textContent = name;
+        tooltipDesc.textContent = desc;
+        tooltip.classList.remove('hidden');
+
+        // 更新提示框位置
+        this.updateTooltipPosition();
+    }
+
+    /**
+     * 更新提示框位置
+     */
+    updateTooltipPosition() {
+        const tooltip = document.getElementById('tooltip');
+        const mouse = this.input.mouse;
+
+        // 将归一化坐标转换为屏幕坐标
+        const x = (mouse.x + 1) * window.innerWidth / 2;
+        const y = (-mouse.y + 1) * window.innerHeight / 2;
+
+        // 偏移一点避免遮挡鼠标
+        tooltip.style.left = `${x + 15}px`;
+        tooltip.style.top = `${y + 15}px`;
     }
 
     /**

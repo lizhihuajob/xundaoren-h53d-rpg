@@ -20,8 +20,11 @@ class InputManager {
             mouseup: [],
             mousemove: [],
             click: [],
-            rightclick: []
+            rightclick: [],
+            hover: []
         };
+        
+        this.lastHoveredObject = null;
         
         this.enabled = false;
     }
@@ -124,9 +127,19 @@ class InputManager {
      */
     handleMouseMove(event) {
         if (!this.enabled) return;
-        
+
         this.updateMousePosition(event);
         this.callbacks.mousemove.forEach(cb => cb(this.mouse, event));
+    }
+
+    /**
+     * 处理悬停检测（由游戏主循环调用）
+     */
+    handleHover(hoveredObject) {
+        if (this.lastHoveredObject !== hoveredObject) {
+            this.callbacks.hover.forEach(cb => cb(hoveredObject, this.lastHoveredObject));
+            this.lastHoveredObject = hoveredObject;
+        }
     }
 
     /**
