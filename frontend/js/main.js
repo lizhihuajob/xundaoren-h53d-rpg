@@ -182,6 +182,11 @@ class Game {
         const playerMesh = this.player.createMesh();
         this.renderer.add(playerMesh);
         
+        // 添加头顶标识到场景
+        if (this.player.indicator) {
+            this.renderer.add(this.player.indicator);
+        }
+        
         // 初始化战斗系统
         this.combat = new CombatSystem(this);
         this.combat.init(this.player);
@@ -224,6 +229,11 @@ class Game {
         // 创建玩家模型
         const playerMesh = this.player.createMesh();
         this.renderer.add(playerMesh);
+        
+        // 添加头顶标识到场景
+        if (this.player.indicator) {
+            this.renderer.add(this.player.indicator);
+        }
         
         // 初始化战斗系统
         this.combat = new CombatSystem(this);

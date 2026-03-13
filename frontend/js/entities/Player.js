@@ -69,6 +69,7 @@ export default class Player {
         // 3D对象
         this.mesh = null;
         this.nameTag = null;
+        this.indicator = null; // 头顶倒三角标识
         
         // 标记
         this.tutorialComplete = false;
@@ -245,7 +246,41 @@ export default class Player {
         this.mesh.receiveShadow = true;
         this.mesh.userData = { type: 'player', entity: this };
         
+        // 创建头顶倒三角标识
+        this.createIndicator();
+        
         return this.mesh;
+    }
+
+    /**
+     * 创建头顶倒三角标识
+     */
+    createIndicator() {
+        // 创建倒三角几何体（圆锥体倒置）
+        const indicatorGeometry = new THREE.ConeGeometry(0.3, 0.5, 3);
+        const indicatorMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x00ff00,
+            transparent: true,
+            opacity: 0.9
+        });
+        
+        this.indicator = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
+        // 倒置圆锥体形成倒三角
+        this.indicator.rotation.x = Math.PI;
+        // 位置在玩家头顶上方
+        this.indicator.position.set(this.position.x, this.position.y + 2.5, this.position.z);
+        
+        // 添加发光效果（内层小一点的倒三角）
+        const glowGeometry = new THREE.ConeGeometry(0.2, 0.35, 3);
+        const glowMaterial = new THREE.MeshBasicMaterial({ 
+            color: 0x88ff88,
+            transparent: true,
+            opacity: 0.6
+        });
+        const glowMesh = new THREE.Mesh(glowGeometry, glowMaterial);
+        glowMesh.rotation.x = Math.PI;
+        glowMesh.position.z = 0.05;
+        this.indicator.add(glowMesh);
     }
 
     /**
@@ -272,6 +307,15 @@ export default class Player {
             this.mesh.position.x = this.position.x;
             this.mesh.position.z = this.position.z;
             this.mesh.rotation.y = this.rotation;
+        }
+        
+        // 更新头顶标识位置
+        if (this.indicator) {
+            this.indicator.position.x = this.position.x;
+            this.indicator.position.z = this.position.z;
+            // 添加轻微的上下浮动动画效果
+            const time = Date.now() * 0.003;
+            this.indicator.position.y = this.position.y + 2.5 + Math.sin(time) * 0.1;
         }
         
         // 更新buff持续时间
