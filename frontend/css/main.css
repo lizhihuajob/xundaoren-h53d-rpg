@@ -1651,3 +1651,34 @@ html, body {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===============================================
+   悬停提示框
+   =============================================== */
+#hover-tooltip {
+    position: absolute;
+    background: var(--bg-panel);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    min-width: 150px;
+    max-width: 250px;
+    pointer-events: none;
+    z-index: 200;
+    box-shadow: var(--shadow-lg);
+    transform: translate(8px, 8px);
+    animation: fadeIn 0.2s ease;
+}
+
+.tooltip-title {
+    color: var(--primary-light);
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+
+.tooltip-desc {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+}

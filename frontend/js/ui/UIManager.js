@@ -80,6 +80,11 @@ export default class UIManager {
         
         // Toast
         this.elements.toastContainer = document.getElementById('toast-container');
+        
+        // 悬停提示框
+        this.elements.hoverTooltip = document.getElementById('hover-tooltip');
+        this.elements.tooltipTitle = document.getElementById('tooltip-title');
+        this.elements.tooltipDesc = document.getElementById('tooltip-desc');
     }
 
     /**
@@ -362,6 +367,29 @@ export default class UIManager {
      */
     showRealmUp(realmName) {
         this.showToast(`境界突破！${realmName}`, 'success', 5000);
+    }
+
+    /**
+     * 显示悬停提示
+     */
+    showHoverTooltip(x, y, title, description) {
+        if (!this.elements.hoverTooltip) return;
+        
+        this.elements.tooltipTitle.textContent = title || '';
+        this.elements.tooltipDesc.textContent = description || '';
+        
+        this.elements.hoverTooltip.style.left = `${x}px`;
+        this.elements.hoverTooltip.style.top = `${y}px`;
+        this.elements.hoverTooltip.classList.remove('hidden');
+    }
+
+    /**
+     * 隐藏悬停提示
+     */
+    hideHoverTooltip() {
+        if (this.elements.hoverTooltip) {
+            this.elements.hoverTooltip.classList.add('hidden');
+        }
     }
 
     /**

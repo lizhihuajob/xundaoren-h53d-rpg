@@ -388,6 +388,57 @@ class Game {
                 }
             }
         });
+
+        // 鼠标悬停检测
+        this.input.on('mousemove', (mouse, event) => {
+            if (this.ui.isDialogOpen) {
+                this.ui.hideHoverTooltip();
+                return;
+            }
+
+            const intersects = this.renderer.raycast(
+                { x: mouse.x, y: mouse.y },
+                this.world.getHoverableObjects()
+            );
+
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+                const userData = hit.userData;
+                const entity = userData.entity;
+
+                let title = '';
+                let description = '';
+
+                if (entity) {
+                    if (userData.type === 'monster') {
+                        title = `${entity.name} (Lv.${entity.level})`;
+                        description = `生命值: ${entity.hp}/${entity.maxHp}`;
+                        if (entity.isDead) {
+                            title += ' (已死亡)';
+                        }
+                    } else if (userData.type === 'npc') {
+                        title = entity.name;
+                        description = entity.title || '';
+                    }
+                } else if (userData.name) {
+                    title = userData.name;
+                    description = userData.description || '';
+                }
+
+                if (title) {
+                    this.ui.showHoverTooltip(
+                        mouse.clientX + 15,
+                        mouse.clientY + 15,
+                        title,
+                        description
+                    );
+                } else {
+                    this.ui.hideHoverTooltip();
+                }
+            } else {
+                this.ui.hideHoverTooltip();
+            }
+        });
     }
 
     /**

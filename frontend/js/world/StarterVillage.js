@@ -23,6 +23,8 @@ export default class StarterVillage {
         this.ground = null;
         this.walls = [];
         this.buildings = [];
+        this.trees = [];
+        this.rocks = [];
         this.npcs = [];
         this.monsters = [];
         
@@ -166,17 +168,21 @@ export default class StarterVillage {
             { x: 10, z: 18 },
             { x: -8, z: -8 },
             { x: 8, z: -10 },
-            { x: -20, z: 8 }
+            { x: -20, z: 8 },
+            { x: 18, z: 5 },
+            { x: -15, z: -15 }
         ];
         
+        this.trees = [];
         treePositions.forEach(pos => {
+            const treeGroup = new THREE.Group();
+            
             // 树干
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 1.5, 8);
             const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
             trunk.position.set(pos.x, 0.75, pos.z);
             trunk.castShadow = true;
-            this.scene.add(trunk);
             
             // 树冠
             const crownGeometry = new THREE.ConeGeometry(1.5, 3, 8);
@@ -184,7 +190,13 @@ export default class StarterVillage {
             const crown = new THREE.Mesh(crownGeometry, crownMaterial);
             crown.position.set(pos.x, 3, pos.z);
             crown.castShadow = true;
-            this.scene.add(crown);
+            
+            treeGroup.add(trunk);
+            treeGroup.add(crown);
+            treeGroup.userData = { type: 'tree', name: '松树', description: '一棵苍翠挺拔的松树，看起来有些年头了。' };
+            
+            this.scene.add(treeGroup);
+            this.trees.push(treeGroup);
         });
         
         // 岩石
@@ -194,6 +206,7 @@ export default class StarterVillage {
             { x: 5, z: -20, s: 1.2 }
         ];
         
+        this.rocks = [];
         rockPositions.forEach(pos => {
             const geometry = new THREE.DodecahedronGeometry(pos.s);
             const material = new THREE.MeshLambertMaterial({ color: 0x696969 });
@@ -201,7 +214,9 @@ export default class StarterVillage {
             rock.position.set(pos.x, pos.s * 0.5, pos.z);
             rock.rotation.set(Math.random(), Math.random(), Math.random());
             rock.castShadow = true;
+            rock.userData = { name: '岩石', description: '一块坚硬的岩石，看起来可以用来开采矿石。' };
             this.scene.add(rock);
+            this.rocks.push(rock);
         });
     }
 
@@ -263,6 +278,27 @@ export default class StarterVillage {
         });
         
         return attackResults;
+    }
+
+    /**
+     * 获取可悬停显示信息的对象
+     */
+    getHoverableObjects() {
+        const objects = [];
+        
+        this.buildings.forEach(building => objects.push(building));
+        this.trees.forEach(tree => objects.push(tree));
+        this.rocks.forEach(rock => objects.push(rock));
+        
+        this.npcs.forEach(npc => {
+            if (npc.mesh) objects.push(npc.mesh);
+        });
+        
+        this.monsters.forEach(monster => {
+            if (monster.mesh) objects.push(monster.mesh);
+        });
+        
+        return objects;
     }
 
     /**
