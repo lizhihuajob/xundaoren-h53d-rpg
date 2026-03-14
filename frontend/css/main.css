@@ -1507,6 +1507,12 @@ html, body {
     color: #ff6b6b;
 }
 
+.damage-number.warning {
+    color: #ffcc00;
+    font-size: 18px;
+    white-space: nowrap;
+}
+
 /* ===============================================
    悬停提示框
    =============================================== */

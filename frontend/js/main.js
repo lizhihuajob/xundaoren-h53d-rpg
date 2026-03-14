@@ -45,6 +45,10 @@ class Game {
         
         // 当前交互NPC
         this.currentNPC = null;
+        
+        // 碰撞提示去重
+        this.lastCollisionMessage = null;
+        this.lastCollisionTime = 0;
     }
 
     /**
@@ -424,8 +428,30 @@ class Game {
         // 获取移动输入
         const direction = this.input.getMovementDirection();
         
-        // 更新玩家
-        this.player.update(deltaTime, direction);
+        // 计算下一个位置并检查碰撞
+        let canMove = true;
+        if (direction.x !== 0 || direction.z !== 0) {
+            const nextPos = this.player.getNextPosition(deltaTime, direction);
+            const collidedBuilding = this.world.checkBuildingCollision(nextPos.x, nextPos.z);
+            if (collidedBuilding) {
+                canMove = false;
+                const message = `前面是${collidedBuilding}，请绕行`;
+                const currentTime = Date.now();
+                if (message !== this.lastCollisionMessage || currentTime - this.lastCollisionTime > 1500) {
+                    this.lastCollisionMessage = message;
+                    this.lastCollisionTime = currentTime;
+                    const playerPos = this.player.mesh.position.clone();
+                    playerPos.y += 2;
+                    const screenPos = this.renderer.worldToScreen(playerPos);
+                    this.ui.showCollisionWarning(message, screenPos.x, screenPos.y);
+                }
+            }
+        }
+        
+        // 更新玩家（如果没有碰撞）
+        if (canMove) {
+            this.player.update(deltaTime, direction);
+        }
         
         // 边界限制
         this.player.clampPosition(
@@ -624,10 +650,15 @@ class Game {
         
         // 击杀奖励
         if (result.killed) {
+            // 获取玩家头顶的屏幕坐标
+            const playerPos = this.player.mesh.position.clone();
+            playerPos.y += 2;
+            const playerScreenPos = this.renderer.worldToScreen(playerPos);
+            
             // 经验
             if (result.exp) {
                 const expResults = this.player.gainExp(result.exp);
-                this.ui.showExpGain(result.exp);
+                this.ui.showExpGain(result.exp, playerScreenPos.x, playerScreenPos.y);
                 
                 expResults.forEach(r => {
                     if (r.type === 'levelUp') {
@@ -641,7 +672,7 @@ class Game {
             // 金币
             if (result.gold) {
                 this.player.gainGold(result.gold);
-                this.ui.showGoldGain(result.gold);
+                this.ui.showGoldGain(result.gold, playerScreenPos.x, playerScreenPos.y);
             }
             
             // 掉落物品

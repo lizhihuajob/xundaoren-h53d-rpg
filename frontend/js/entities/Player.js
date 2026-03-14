@@ -284,6 +284,22 @@ export default class Player {
     }
 
     /**
+     * 计算下一个位置（用于碰撞检测）
+     */
+    getNextPosition(deltaTime, direction) {
+        if (direction.x === 0 && direction.z === 0) {
+            return { x: this.position.x, z: this.position.z, rotation: this.rotation };
+        }
+        
+        const moveSpeed = this.speed * deltaTime * 5;
+        return {
+            x: this.position.x + direction.x * moveSpeed,
+            z: this.position.z + direction.z * moveSpeed,
+            rotation: Math.atan2(direction.x, direction.z)
+        };
+    }
+
+    /**
      * 更新位置
      */
     update(deltaTime, direction) {

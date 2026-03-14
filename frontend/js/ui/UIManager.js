@@ -337,17 +337,50 @@ export default class UIManager {
     }
 
     /**
+     * 显示碰撞警告
+     */
+    showCollisionWarning(message, x, y) {
+        const num = document.createElement('div');
+        num.className = 'damage-number warning';
+        num.textContent = message;
+        num.style.left = `${x}px`;
+        num.style.top = `${y - 40}px`;
+        document.body.appendChild(num);
+        setTimeout(() => num.remove(), 1500);
+    }
+
+    /**
      * 显示经验获得
      */
-    showExpGain(exp) {
-        this.showToast(`获得 ${exp} 经验值`, 'success');
+    showExpGain(exp, x, y) {
+        if (x !== undefined && y !== undefined) {
+            const num = document.createElement('div');
+            num.className = 'damage-number heal';
+            num.textContent = `+${exp} 经验`;
+            num.style.left = `${x}px`;
+            num.style.top = `${y - 20}px`;
+            document.body.appendChild(num);
+            setTimeout(() => num.remove(), 1500);
+        } else {
+            this.showToast(`获得 ${exp} 经验值`, 'success');
+        }
     }
 
     /**
      * 显示金币获得
      */
-    showGoldGain(gold) {
-        this.showToast(`获得 ${gold} 金币`, 'success');
+    showGoldGain(gold, x, y) {
+        if (x !== undefined && y !== undefined) {
+            const num = document.createElement('div');
+            num.className = 'damage-number heal';
+            num.textContent = `+${gold} 金币`;
+            num.style.left = `${x}px`;
+            num.style.top = `${y}px`;
+            document.body.appendChild(num);
+            setTimeout(() => num.remove(), 1500);
+        } else {
+            this.showToast(`获得 ${gold} 金币`, 'success');
+        }
     }
 
     /**
