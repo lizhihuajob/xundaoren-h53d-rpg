@@ -1508,6 +1508,82 @@ html, body {
 }
 
 /* ===============================================
+   头顶飘字奖励（经验/金币）
+   =============================================== */
+.floating-reward {
+    position: absolute;
+    font-size: 18px;
+    font-weight: bold;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+    animation: rewardFloat 1.5s ease-out forwards;
+    z-index: 1000;
+    transform: translateX(-50%);
+}
+
+.floating-reward.floating-exp {
+    color: #44ff88;
+}
+
+.floating-reward.floating-gold {
+    color: #ffd700;
+}
+
+@keyframes rewardFloat {
+    0% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-60px);
+    }
+}
+
+/* ===============================================
+   位置提示框（碰撞提示等）
+   =============================================== */
+.positioned-tip {
+    position: absolute;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+    z-index: 1000;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    white-space: nowrap;
+}
+
+.positioned-tip.show {
+    opacity: 1;
+}
+
+.positioned-tip.tip-warning {
+    background: linear-gradient(135deg, #ff9500, #ff6b00);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(255, 107, 0, 0.4);
+}
+
+.positioned-tip.tip-info {
+    background: linear-gradient(135deg, #4a9eff, #0066cc);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+}
+
+.positioned-tip.tip-success {
+    background: linear-gradient(135deg, #44cc88, #00aa55);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 170, 85, 0.4);
+}
+
+/* ===============================================
    悬停提示框
    =============================================== */
 #tooltip {

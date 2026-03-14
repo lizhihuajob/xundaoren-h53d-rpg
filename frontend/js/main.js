@@ -424,6 +424,9 @@ class Game {
         // 获取移动输入
         const direction = this.input.getMovementDirection();
         
+        // 保存旧位置用于碰撞回退
+        const oldPosition = { x: this.player.position.x, z: this.player.position.z };
+        
         // 更新玩家
         this.player.update(deltaTime, direction);
         
@@ -434,6 +437,47 @@ class Game {
             this.world.bounds.minZ + 1,
             this.world.bounds.maxZ - 1
         );
+        
+        // 建筑物碰撞检测
+        const collision = this.world.checkBuildingCollision(
+            this.player.position.x,
+            this.player.position.z,
+            0.5
+        );
+        
+        if (collision) {
+            // 回退到旧位置
+            this.player.position.x = oldPosition.x;
+            this.player.position.z = oldPosition.z;
+            if (this.player.mesh) {
+                this.player.mesh.position.x = oldPosition.x;
+                this.player.mesh.position.z = oldPosition.z;
+            }
+            if (this.player.indicator) {
+                this.player.indicator.position.x = oldPosition.x;
+                this.player.indicator.position.z = oldPosition.z;
+            }
+            
+            // 显示碰撞提示（带冷却）
+            this.buildingCollisionCooldown = this.buildingCollisionCooldown || 0;
+            if (this.buildingCollisionCooldown <= 0) {
+                // 获取玩家屏幕位置，在玩家头顶显示提示
+                const playerScreenPos = this.renderer.worldToScreen(this.player.mesh.position);
+                this.ui.showPositionedTip(
+                    playerScreenPos.x,
+                    playerScreenPos.y - 80,
+                    `无法穿过${collision.name}，请绕行`,
+                    'warning',
+                    2000
+                );
+                this.buildingCollisionCooldown = 2;
+            }
+        }
+        
+        // 更新碰撞提示冷却
+        if (this.buildingCollisionCooldown > 0) {
+            this.buildingCollisionCooldown -= deltaTime;
+        }
         
         // 更新相机
         this.renderer.updateCamera(this.player.mesh.position);
@@ -624,10 +668,20 @@ class Game {
         
         // 击杀奖励
         if (result.killed) {
+            // 获取怪物位置用于显示头顶飘字
+            let monsterScreenPos = null;
+            if (result.target && result.target.mesh) {
+                monsterScreenPos = this.renderer.worldToScreen(result.target.mesh.position);
+            }
+            
             // 经验
             if (result.exp) {
                 const expResults = this.player.gainExp(result.exp);
-                this.ui.showExpGain(result.exp);
+                
+                // 在怪物头顶显示经验飘字
+                if (monsterScreenPos) {
+                    this.ui.showFloatingReward(monsterScreenPos.x, monsterScreenPos.y, result.exp, result.gold || 0);
+                }
                 
                 expResults.forEach(r => {
                     if (r.type === 'levelUp') {
@@ -638,10 +692,9 @@ class Game {
                 });
             }
             
-            // 金币
+            // 金币（已在头顶飘字中显示，这里只处理实际获得逻辑）
             if (result.gold) {
                 this.player.gainGold(result.gold);
-                this.ui.showGoldGain(result.gold);
             }
             
             // 掉落物品

@@ -357,4 +357,76 @@ export default class StarterVillage {
             z: Math.max(this.bounds.minZ + 1, Math.min(this.bounds.maxZ - 1, position.z))
         };
     }
+
+    /**
+     * 获取建筑物碰撞信息
+     * 返回所有建筑物的碰撞盒信息
+     */
+    getBuildingColliders() {
+        return this.buildings.map(building => {
+            const box = new THREE.Box3().setFromObject(building);
+            return {
+                name: building.userData.entity?.name || '建筑物',
+                minX: box.min.x,
+                maxX: box.max.x,
+                minZ: box.min.z,
+                maxZ: box.max.z
+            };
+        });
+    }
+
+    /**
+     * 检查位置是否与建筑物碰撞
+     * @param {number} x - X坐标
+     * @param {number} z - Z坐标
+     * @param {number} radius - 碰撞半径（玩家半径）
+     * @returns {object|null} 返回碰撞的建筑物信息，或null
+     */
+    checkBuildingCollision(x, z, radius = 0.5) {
+        for (const building of this.buildings) {
+            const box = new THREE.Box3().setFromObject(building);
+            const expandedMinX = box.min.x - radius;
+            const expandedMaxX = box.max.x + radius;
+            const expandedMinZ = box.min.z - radius;
+            const expandedMaxZ = box.max.z + radius;
+
+            if (x >= expandedMinX && x <= expandedMaxX &&
+                z >= expandedMinZ && z <= expandedMaxZ) {
+                return {
+                    name: building.userData.entity?.name || '建筑物',
+                    building: building,
+                    box: box
+                };
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 计算绕行方向
+     * @param {object} playerPos - 玩家位置 {x, z}
+     * @param {object} collision - 碰撞信息
+     * @param {object} direction - 移动方向 {x, z}
+     * @returns {object} 推开方向 {x, z}
+     */
+    getAvoidanceDirection(playerPos, collision, direction) {
+        const box = collision.box;
+        const centerX = (box.min.x + box.max.x) / 2;
+        const centerZ = (box.min.z + box.max.z) / 2;
+
+        const dx = playerPos.x - centerX;
+        const dz = playerPos.z - centerZ;
+
+        const halfW = (box.max.x - box.min.x) / 2;
+        const halfD = (box.max.z - box.min.z) / 2;
+
+        const overlapX = halfW + 0.5 - Math.abs(dx);
+        const overlapZ = halfD + 0.5 - Math.abs(dz);
+
+        if (overlapX < overlapZ) {
+            return { x: dx > 0 ? 1 : -1, z: 0, side: 'x' };
+        } else {
+            return { x: 0, z: dz > 0 ? 1 : -1, side: 'z' };
+        }
+    }
 }
