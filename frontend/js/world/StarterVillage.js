@@ -357,4 +357,32 @@ export default class StarterVillage {
             z: Math.max(this.bounds.minZ + 1, Math.min(this.bounds.maxZ - 1, position.z))
         };
     }
+
+    /**
+     * 检查位置是否与建筑物碰撞
+     */
+    checkBuildingCollision(x, z) {
+        const playerRadius = 0.6;
+        
+        for (const building of this.buildings) {
+            const buildingX = building.position.x;
+            const buildingZ = building.position.z;
+            const buildingW = building.geometry.parameters.width;
+            const buildingD = building.geometry.parameters.depth;
+            
+            const halfW = buildingW / 2;
+            const halfD = buildingD / 2;
+            
+            const minX = buildingX - halfW - playerRadius;
+            const maxX = buildingX + halfW + playerRadius;
+            const minZ = buildingZ - halfD - playerRadius;
+            const maxZ = buildingZ + halfD + playerRadius;
+            
+            if (x >= minX && x <= maxX && z >= minZ && z <= maxZ) {
+                return building.userData.entity.name;
+            }
+        }
+        
+        return null;
+    }
 }
