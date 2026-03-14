@@ -357,4 +357,69 @@ export default class StarterVillage {
             z: Math.max(this.bounds.minZ + 1, Math.min(this.bounds.maxZ - 1, position.z))
         };
     }
+
+    /**
+     * 检查与建筑物的碰撞
+     * 返回碰撞的建筑物信息，如果没有碰撞则返回null
+     */
+    checkBuildingCollision(position, playerRadius = 0.5) {
+        for (const building of this.buildings) {
+            const config = building.userData.entity;
+            const box = building.geometry.parameters;
+            
+            // 获取建筑物的边界（考虑玩家半径）
+            const halfWidth = box.width / 2 + playerRadius;
+            const halfDepth = box.depth / 2 + playerRadius;
+            
+            const minX = building.position.x - halfWidth;
+            const maxX = building.position.x + halfWidth;
+            const minZ = building.position.z - halfDepth;
+            const maxZ = building.position.z + halfDepth;
+            
+            // 检查玩家位置是否在建筑物范围内
+            if (position.x >= minX && position.x <= maxX &&
+                position.z >= minZ && position.z <= maxZ) {
+                return {
+                    building: building,
+                    name: config.name,
+                    minX: minX,
+                    maxX: maxX,
+                    minZ: minZ,
+                    maxZ: maxZ,
+                    centerX: building.position.x,
+                    centerZ: building.position.z
+                };
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 将位置推出建筑物
+     * 返回修正后的位置
+     */
+    resolveBuildingCollision(position, collision) {
+        // 计算到建筑物各边的距离
+        const distToLeft = position.x - collision.minX;
+        const distToRight = collision.maxX - position.x;
+        const distToTop = position.z - collision.minZ;
+        const distToBottom = collision.maxZ - position.z;
+        
+        // 找到最小的距离，从该方向推出
+        const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
+        
+        const newPosition = { ...position };
+        
+        if (minDist === distToLeft) {
+            newPosition.x = collision.minX - 0.1;
+        } else if (minDist === distToRight) {
+            newPosition.x = collision.maxX + 0.1;
+        } else if (minDist === distToTop) {
+            newPosition.z = collision.minZ - 0.1;
+        } else {
+            newPosition.z = collision.maxZ + 0.1;
+        }
+        
+        return newPosition;
+    }
 }
