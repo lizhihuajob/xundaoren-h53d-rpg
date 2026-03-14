@@ -1508,6 +1508,39 @@ html, body {
 }
 
 /* ===============================================
+   悬停提示框
+   =============================================== */
+#tooltip {
+    position: fixed;
+    z-index: 1500;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+}
+
+.tooltip-content {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    box-shadow: var(--shadow-lg);
+    max-width: 200px;
+}
+
+.tooltip-name {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--primary-light);
+    margin-bottom: 4px;
+}
+
+.tooltip-desc {
+    display: block;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* ===============================================
    动画
    =============================================== */
 @keyframes fadeIn {

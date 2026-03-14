@@ -25,6 +25,7 @@ export default class StarterVillage {
         this.buildings = [];
         this.npcs = [];
         this.monsters = [];
+        this.decorations = []; // 装饰物（树、岩石等）
         
         // 怪物生成点
         this.monsterSpawns = [
@@ -135,23 +136,23 @@ export default class StarterVillage {
             { name: '铁匠铺', x: -15, z: 5, w: 5, h: 3.5, d: 5, color: 0x654321 },
             { name: '修炼台', x: 15, z: 10, w: 4, h: 2, d: 4, color: 0x4169e1 }
         ];
-        
+
         buildingConfigs.forEach(config => {
             const geometry = new THREE.BoxGeometry(config.w, config.h, config.d);
-            const material = new THREE.MeshLambertMaterial({ 
-                color: config.color 
+            const material = new THREE.MeshLambertMaterial({
+                color: config.color
             });
-            
+
             const building = new THREE.Mesh(geometry, material);
             building.position.set(config.x, config.h / 2, config.z);
             building.castShadow = true;
             building.receiveShadow = true;
-            building.userData = { name: config.name };
-            
+            building.userData = { type: 'building', entity: { name: config.name } };
+
             this.scene.add(building);
             this.buildings.push(building);
         });
-        
+
         // 添加一些装饰性的小物件
         this.createDecorations();
     }
@@ -160,40 +161,52 @@ export default class StarterVillage {
      * 创建装饰物
      */
     createDecorations() {
-        // 树木（圆锥 + 圆柱）
+        // 树木（圆锥 + 圆柱）- 添加2棵树后的新位置列表
         const treePositions = [
             { x: -10, z: 15 },
             { x: 10, z: 18 },
             { x: -8, z: -8 },
             { x: 8, z: -10 },
-            { x: -20, z: 8 }
+            { x: -20, z: 8 },
+            { x: 18, z: 5 },    // 新增树1
+            { x: -15, z: -18 }  // 新增树2
         ];
-        
-        treePositions.forEach(pos => {
+
+        treePositions.forEach((pos, index) => {
+            // 创建树的容器组
+            const treeGroup = new THREE.Group();
+            treeGroup.position.set(pos.x, 0, pos.z);
+
             // 树干
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 1.5, 8);
             const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-            trunk.position.set(pos.x, 0.75, pos.z);
+            trunk.position.set(0, 0.75, 0);
             trunk.castShadow = true;
-            this.scene.add(trunk);
-            
+            treeGroup.add(trunk);
+
             // 树冠
             const crownGeometry = new THREE.ConeGeometry(1.5, 3, 8);
             const crownMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
             const crown = new THREE.Mesh(crownGeometry, crownMaterial);
-            crown.position.set(pos.x, 3, pos.z);
+            crown.position.set(0, 3, 0);
             crown.castShadow = true;
-            this.scene.add(crown);
+            treeGroup.add(crown);
+
+            // 添加 userData 用于悬停提示
+            treeGroup.userData = { type: 'tree', entity: { name: '灵树' } };
+
+            this.scene.add(treeGroup);
+            this.decorations.push(treeGroup);
         });
-        
+
         // 岩石
         const rockPositions = [
             { x: -22, z: -10, s: 1 },
             { x: 20, z: 15, s: 0.8 },
             { x: 5, z: -20, s: 1.2 }
         ];
-        
+
         rockPositions.forEach(pos => {
             const geometry = new THREE.DodecahedronGeometry(pos.s);
             const material = new THREE.MeshLambertMaterial({ color: 0x696969 });
@@ -201,7 +214,9 @@ export default class StarterVillage {
             rock.position.set(pos.x, pos.s * 0.5, pos.z);
             rock.rotation.set(Math.random(), Math.random(), Math.random());
             rock.castShadow = true;
+            rock.userData = { type: 'rock', entity: { name: '岩石' } };
             this.scene.add(rock);
+            this.decorations.push(rock);
         });
     }
 
@@ -270,15 +285,44 @@ export default class StarterVillage {
      */
     getSelectableObjects() {
         const objects = [];
-        
+
         this.npcs.forEach(npc => {
             if (npc.mesh) objects.push(npc.mesh);
         });
-        
+
         this.monsters.forEach(monster => {
             if (monster.mesh && !monster.isDead) objects.push(monster.mesh);
         });
-        
+
+        return objects;
+    }
+
+    /**
+     * 获取所有可交互的对象（包括装饰物）
+     */
+    getAllInteractableObjects() {
+        const objects = [];
+
+        // NPC
+        this.npcs.forEach(npc => {
+            if (npc.mesh) objects.push(npc.mesh);
+        });
+
+        // 怪物
+        this.monsters.forEach(monster => {
+            if (monster.mesh && !monster.isDead) objects.push(monster.mesh);
+        });
+
+        // 建筑物
+        this.buildings.forEach(building => {
+            objects.push(building);
+        });
+
+        // 装饰物（树、岩石等）
+        this.decorations.forEach(decoration => {
+            objects.push(decoration);
+        });
+
         return objects;
     }
 
