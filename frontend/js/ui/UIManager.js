@@ -321,6 +321,33 @@ export default class UIManager {
     }
 
     /**
+     * 在指定位置显示提示框（用于碰撞提示等）
+     * @param {number} x - 屏幕X坐标
+     * @param {number} y - 屏幕Y坐标
+     * @param {string} message - 提示消息
+     * @param {string} type - 提示类型 (info/warning/success)
+     * @param {number} duration - 持续时间(ms)
+     */
+    showPositionedTip(x, y, message, type = 'warning', duration = 2000) {
+        const tip = document.createElement('div');
+        tip.className = `positioned-tip tip-${type}`;
+        tip.textContent = message;
+        tip.style.left = `${x}px`;
+        tip.style.top = `${y}px`;
+        
+        document.body.appendChild(tip);
+        
+        // 动画进入
+        setTimeout(() => tip.classList.add('show'), 10);
+        
+        // 自动消失
+        setTimeout(() => {
+            tip.classList.remove('show');
+            setTimeout(() => tip.remove(), 300);
+        }, duration);
+    }
+
+    /**
      * 显示伤害数字
      */
     showDamageNumber(x, y, damage, isPlayer = false) {
@@ -337,17 +364,46 @@ export default class UIManager {
     }
 
     /**
-     * 显示经验获得
+     * 显示头顶飘字奖励（金币和经验）
+     * @param {number} x - 屏幕X坐标
+     * @param {number} y - 屏幕Y坐标
+     * @param {number} exp - 经验值
+     * @param {number} gold - 金币
      */
-    showExpGain(exp) {
-        this.showToast(`获得 ${exp} 经验值`, 'success');
+    showFloatingReward(x, y, exp, gold) {
+        const offsetY = 0;
+        
+        if (exp > 0) {
+            const expNum = document.createElement('div');
+            expNum.className = 'floating-reward floating-exp';
+            expNum.textContent = `+${exp} 经验`;
+            expNum.style.left = `${x}px`;
+            expNum.style.top = `${y - 30}px`;
+            document.body.appendChild(expNum);
+            setTimeout(() => expNum.remove(), 1500);
+        }
+        
+        if (gold > 0) {
+            const goldNum = document.createElement('div');
+            goldNum.className = 'floating-reward floating-gold';
+            goldNum.textContent = `+${gold} 金币`;
+            goldNum.style.left = `${x}px`;
+            goldNum.style.top = `${y}px`;
+            document.body.appendChild(goldNum);
+            setTimeout(() => goldNum.remove(), 1500);
+        }
     }
 
     /**
-     * 显示金币获得
+     * 显示经验获得（已废弃，改用头顶飘字）
+     */
+    showExpGain(exp) {
+    }
+
+    /**
+     * 显示金币获得（已废弃，改用头顶飘字）
      */
     showGoldGain(gold) {
-        this.showToast(`获得 ${gold} 金币`, 'success');
     }
 
     /**
