@@ -424,6 +424,9 @@ class Game {
         // 获取移动输入
         const direction = this.input.getMovementDirection();
         
+        // 保存移动前的位置
+        const previousPosition = { ...this.player.position };
+        
         // 更新玩家
         this.player.update(deltaTime, direction);
         
@@ -434,6 +437,30 @@ class Game {
             this.world.bounds.minZ + 1,
             this.world.bounds.maxZ - 1
         );
+        
+        // 建筑物碰撞检测
+        const collision = this.world.checkBuildingCollision(this.player.position);
+        if (collision) {
+            // 将玩家推出建筑物
+            const resolvedPosition = this.world.resolveBuildingCollision(this.player.position, collision);
+            this.player.position.x = resolvedPosition.x;
+            this.player.position.z = resolvedPosition.z;
+            
+            // 更新玩家模型位置
+            if (this.player.mesh) {
+                this.player.mesh.position.x = this.player.position.x;
+                this.player.mesh.position.z = this.player.position.z;
+            }
+            
+            // 显示碰撞提示（只在刚碰撞时显示，在人物附近弹出）
+            if (!this.buildingCollisionTimer || Date.now() - this.buildingCollisionTimer > 2000) {
+                const screenPos = this.renderer.worldToScreen(this.player.mesh.position);
+                if (screenPos) {
+                    this.ui.showPopupAtPosition(screenPos.x, screenPos.y - 80, `${collision.name}挡路了，请绕行`, 'warning');
+                }
+                this.buildingCollisionTimer = Date.now();
+            }
+        }
         
         // 更新相机
         this.renderer.updateCamera(this.player.mesh.position);
@@ -624,10 +651,22 @@ class Game {
         
         // 击杀奖励
         if (result.killed) {
+            // 获取怪物死亡位置（用于显示奖励）
+            let rewardScreenPos = null;
+            if (result.target && result.target.mesh) {
+                rewardScreenPos = this.renderer.worldToScreen(result.target.mesh.position);
+            }
+            
             // 经验
             if (result.exp) {
                 const expResults = this.player.gainExp(result.exp);
-                this.ui.showExpGain(result.exp);
+                
+                // 在怪物头顶显示经验奖励
+                if (rewardScreenPos) {
+                    this.ui.showRewardAtPosition(rewardScreenPos.x, rewardScreenPos.y - 30, `+${result.exp} 经验`, 'exp');
+                } else {
+                    this.ui.showExpGain(result.exp);
+                }
                 
                 expResults.forEach(r => {
                     if (r.type === 'levelUp') {
@@ -641,7 +680,13 @@ class Game {
             // 金币
             if (result.gold) {
                 this.player.gainGold(result.gold);
-                this.ui.showGoldGain(result.gold);
+                
+                // 在怪物头顶显示金币奖励（在经验下方）
+                if (rewardScreenPos) {
+                    this.ui.showRewardAtPosition(rewardScreenPos.x, rewardScreenPos.y, `+${result.gold} 金币`, 'gold');
+                } else {
+                    this.ui.showGoldGain(result.gold);
+                }
             }
             
             // 掉落物品

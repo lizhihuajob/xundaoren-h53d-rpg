@@ -351,6 +351,49 @@ export default class UIManager {
     }
 
     /**
+     * 在指定位置显示奖励提示（经验、金币等）
+     * @param {number} x - 屏幕X坐标
+     * @param {number} y - 屏幕Y坐标
+     * @param {string} text - 显示的文本
+     * @param {string} type - 类型：'exp' | 'gold'
+     */
+    showRewardAtPosition(x, y, text, type = 'exp') {
+        const reward = document.createElement('div');
+        reward.className = `reward-float reward-${type}`;
+        reward.textContent = text;
+        reward.style.left = `${x}px`;
+        reward.style.top = `${y}px`;
+        
+        document.body.appendChild(reward);
+        
+        // 动画结束后移除
+        setTimeout(() => reward.remove(), 1500);
+    }
+
+    /**
+     * 在人物附近显示提示框
+     * @param {number} x - 屏幕X坐标
+     * @param {number} y - 屏幕Y坐标
+     * @param {string} text - 显示的文本
+     * @param {string} type - 类型：'warning' | 'info' | 'success'
+     */
+    showPopupAtPosition(x, y, text, type = 'info') {
+        const popup = document.createElement('div');
+        popup.className = `popup-tip popup-${type}`;
+        popup.textContent = text;
+        popup.style.left = `${x}px`;
+        popup.style.top = `${y}px`;
+        
+        document.body.appendChild(popup);
+        
+        // 动画结束后移除
+        setTimeout(() => {
+            popup.classList.add('fade-out');
+            setTimeout(() => popup.remove(), 300);
+        }, 2000);
+    }
+
+    /**
      * 显示升级
      */
     showLevelUp(level) {
