@@ -101,6 +101,25 @@ export const NPCS = {
                 ]
             }
         }
+    },
+    doctor: {
+        id: 'doctor',
+        name: '郎中·孙妙手',
+        title: '医馆掌柜',
+        color: 0x00ff00,
+        size: 0.9,
+        position: { x: 15, y: 0, z: 0 },
+        type: 'shop',
+        shopItems: ['basicHpPotion'],
+        dialogs: {
+            default: {
+                text: '这位道友，看你面色不佳，可是受伤了？我这里有疗伤圣药，要不要看看？',
+                options: [
+                    { text: '我要购买疗伤药', action: 'openShop' },
+                    { text: '告辞', action: 'close' }
+                ]
+            }
+        }
     }
 };
 

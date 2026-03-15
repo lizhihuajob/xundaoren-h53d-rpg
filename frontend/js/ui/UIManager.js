@@ -67,6 +67,7 @@ export default class UIManager {
         this.elements.inventoryPanel = document.getElementById('inventory-panel');
         this.elements.skillsPanel = document.getElementById('skills-panel');
         this.elements.questLog = document.getElementById('quests-panel');
+        this.elements.shopPanel = document.getElementById('shop-panel');
         
         // 对话系统
         this.elements.dialogPanel = document.getElementById('dialog-box');
@@ -435,12 +436,65 @@ export default class UIManager {
      * 关闭所有面板
      */
     closeAllPanels() {
-        ['characterPanel', 'inventoryPanel', 'skillsPanel', 'questLog'].forEach(id => {
+        ['characterPanel', 'inventoryPanel', 'skillsPanel', 'questLog', 'shopPanel'].forEach(id => {
             if (this.elements[id]) {
                 this.elements[id].classList.add('hidden');
             }
         });
         this.hideDialog();
+    }
+
+    showShop(npc, player, onBuyItem) {
+        this.closeAllPanels();
+        
+        const shopTitle = document.getElementById('shop-title');
+        if (shopTitle) {
+            shopTitle.textContent = npc.title || '商店';
+        }
+        
+        const shopGold = document.getElementById('shop-player-gold');
+        if (shopGold) {
+            shopGold.textContent = player.gold;
+        }
+        
+        const shopItems = document.getElementById('shop-items');
+        if (!shopItems) return;
+        
+        shopItems.innerHTML = '';
+        
+        const items = npc.shopItems || [];
+        items.forEach(itemId => {
+            const item = getItem(itemId);
+            if (!item) return;
+            
+            const itemEl = document.createElement('div');
+            itemEl.className = 'shop-item';
+            itemEl.innerHTML = `
+                <div class="item-icon">${item.icon}</div>
+                <div class="item-info">
+                    <div class="item-name">${item.name}</div>
+                    <div class="item-desc">${item.description}</div>
+                </div>
+                <div class="item-price">
+                    <span class="price">${item.price} 灵石</span>
+                    <button class="buy-btn" data-item-id="${item.id}">购买</button>
+                </div>
+            `;
+            shopItems.appendChild(itemEl);
+        });
+        
+        shopItems.addEventListener('click', (e) => {
+            if (e.target.classList.contains('buy-btn')) {
+                const itemId = e.target.dataset.itemId;
+                if (onBuyItem) {
+                    onBuyItem(itemId);
+                }
+            }
+        });
+        
+        if (this.elements.shopPanel) {
+            this.elements.shopPanel.classList.remove('hidden');
+        }
     }
 
     /**

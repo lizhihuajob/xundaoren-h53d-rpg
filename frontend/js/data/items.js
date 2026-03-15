@@ -4,6 +4,17 @@
 
 export const ITEMS = {
     // 消耗品
+    basicHpPotion: {
+        id: 'basicHpPotion',
+        name: '初级疗伤药',
+        icon: '💊',
+        type: 'consumable',
+        stackable: true,
+        maxStack: 99,
+        price: 1,
+        effect: { type: 'heal', value: 30 },
+        description: '服用后立即恢复30点生命值'
+    },
     hpPotion: {
         id: 'hpPotion',
         name: '回血丹',
