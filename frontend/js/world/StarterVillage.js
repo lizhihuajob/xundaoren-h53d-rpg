@@ -133,8 +133,9 @@ export default class StarterVillage {
      */
     createBuildings() {
         const buildingConfigs = [
-            { name: '铁匠铺', x: -15, z: 5, w: 5, h: 3.5, d: 5, color: 0x654321 },
-            { name: '修炼台', x: 15, z: 10, w: 4, h: 2, d: 4, color: 0x4169e1 }
+            { name: '铁匠铺', x: -15, z: 5, w: 5, h: 3.5, d: 5, color: 0x654321, hasRoof: true },
+            { name: '修炼台', x: 15, z: 10, w: 4, h: 2, d: 4, color: 0x4169e1 },
+            { name: '医馆', x: 15, z: -5, w: 5, h: 3, d: 5, color: 0x3b82f6, hasRoof: true }
         ];
 
         buildingConfigs.forEach(config => {
@@ -151,10 +152,28 @@ export default class StarterVillage {
 
             this.scene.add(building);
             this.buildings.push(building);
+
+            if (config.hasRoof) {
+                this.createRoof(config);
+            }
         });
 
         // 添加一些装饰性的小物件
         this.createDecorations();
+    }
+
+    /**
+     * 创建三角形房顶
+     */
+    createRoof(config) {
+        const roofHeight = 2;
+        const roofGeometry = new THREE.ConeGeometry(config.w * 0.8, roofHeight, 4);
+        const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x8b0000 });
+        const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+        roof.rotation.y = Math.PI / 4;
+        roof.position.set(config.x, config.h + roofHeight / 2, config.z);
+        roof.castShadow = true;
+        this.scene.add(roof);
     }
 
     /**
