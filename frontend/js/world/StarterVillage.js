@@ -76,14 +76,14 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 中央广场（浅色石板）
+        // 中央广场（浅色石板）- 移动到医馆和铁匠铺前方
         const plazaGeometry = new THREE.CircleGeometry(8, 32);
-        const plazaMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x808080 
+        const plazaMaterial = new THREE.MeshLambertMaterial({
+            color: 0x808080
         });
         const plaza = new THREE.Mesh(plazaGeometry, plazaMaterial);
         plaza.rotation.x = -Math.PI / 2;
-        plaza.position.y = 0.01;
+        plaza.position.set(0, 0.01, 10);
         plaza.receiveShadow = true;
         this.scene.add(plaza);
         
@@ -160,7 +160,7 @@ export default class StarterVillage {
      * 创建医馆
      */
     createMedicalHall() {
-        const config = { name: '医馆', x: -8, z: -15, w: 6, h: 4, d: 5, color: 0xf5f5dc };
+        const config = { name: '医馆', x: -15, z: 15, w: 3, h: 2, d: 2.5, color: 0xf5f5dc };
 
         // 创建房屋主体
         const bodyGeometry = new THREE.BoxGeometry(config.w, config.h, config.d);
@@ -168,64 +168,64 @@ export default class StarterVillage {
             color: config.color
         });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.set(config.x, config.h / 2, config.z);
+        body.position.set(0, config.h / 2, 0);
         body.castShadow = true;
         body.receiveShadow = true;
 
         // 创建三角形房顶
-        const roofHeight = 2.5;
-        const roofGeometry = new THREE.ConeGeometry(5, roofHeight, 4);
+        const roofHeight = 1.25;
+        const roofGeometry = new THREE.ConeGeometry(2.5, roofHeight, 4);
         const roofMaterial = new THREE.MeshLambertMaterial({
             color: 0x228b22 // 绿色屋顶，代表医馆
         });
         const roof = new THREE.Mesh(roofGeometry, roofMaterial);
-        roof.position.set(config.x, config.h + roofHeight / 2, config.z);
+        roof.position.set(0, config.h + roofHeight / 2, 0);
         roof.rotation.y = Math.PI / 4;
         roof.castShadow = true;
         roof.receiveShadow = true;
 
-        // 创建医馆的门
-        const doorGeometry = new THREE.BoxGeometry(1.5, 2.5, 0.2);
+        // 创建医馆的门（右边）
+        const doorGeometry = new THREE.BoxGeometry(0.1, 1.25, 0.75);
         const doorMaterial = new THREE.MeshLambertMaterial({
             color: 0x8b4513
         });
         const door = new THREE.Mesh(doorGeometry, doorMaterial);
-        door.position.set(config.x, 1.25, config.z + config.d / 2 + 0.1);
+        door.position.set(config.w / 2 + 0.05, 0.625, 0);
         door.castShadow = true;
         door.receiveShadow = true;
 
         // 创建医馆招牌（红十字）
-        const signBoardGeometry = new THREE.BoxGeometry(2, 0.8, 0.2);
+        const signBoardGeometry = new THREE.BoxGeometry(0.1, 0.4, 1);
         const signBoardMaterial = new THREE.MeshLambertMaterial({
             color: 0xffffff
         });
         const signBoard = new THREE.Mesh(signBoardGeometry, signBoardMaterial);
-        signBoard.position.set(config.x, config.h + 1, config.z + config.d / 2 + 0.2);
+        signBoard.position.set(config.w / 2 + 0.1, config.h + 0.5, 0);
 
         // 红色十字 - 竖条
-        const crossVGeometry = new THREE.BoxGeometry(0.3, 0.6, 0.05);
+        const crossVGeometry = new THREE.BoxGeometry(0.025, 0.3, 0.15);
         const crossMaterial = new THREE.MeshLambertMaterial({
             color: 0xff0000
         });
         const crossV = new THREE.Mesh(crossVGeometry, crossMaterial);
-        crossV.position.set(config.x, config.h + 1, config.z + config.d / 2 + 0.35);
+        crossV.position.set(config.w / 2 + 0.175, config.h + 0.5, 0);
 
         // 红色十字 - 横条
-        const crossHGeometry = new THREE.BoxGeometry(0.6, 0.3, 0.05);
+        const crossHGeometry = new THREE.BoxGeometry(0.025, 0.15, 0.3);
         const crossH = new THREE.Mesh(crossHGeometry, crossMaterial);
-        crossH.position.set(config.x, config.h + 1, config.z + config.d / 2 + 0.35);
+        crossH.position.set(config.w / 2 + 0.175, config.h + 0.5, 0);
 
         // 创建药罐装饰
-        const jarGeometry = new THREE.CylinderGeometry(0.3, 0.4, 0.8, 8);
+        const jarGeometry = new THREE.CylinderGeometry(0.15, 0.2, 0.4, 8);
         const jarMaterial = new THREE.MeshLambertMaterial({
             color: 0x8b4513
         });
         const jar1 = new THREE.Mesh(jarGeometry, jarMaterial);
-        jar1.position.set(config.x - 2, 0.4, config.z + config.d / 2 + 0.5);
+        jar1.position.set(config.w / 2 + 0.25, 0.2, -1);
         jar1.castShadow = true;
 
         const jar2 = new THREE.Mesh(jarGeometry, jarMaterial);
-        jar2.position.set(config.x + 2, 0.4, config.z + config.d / 2 + 0.5);
+        jar2.position.set(config.w / 2 + 0.25, 0.2, 1);
         jar2.castShadow = true;
 
         // 将所有部分组合成一个组
@@ -239,6 +239,9 @@ export default class StarterVillage {
         buildingGroup.add(jar1);
         buildingGroup.add(jar2);
 
+        // 设置Group的位置
+        buildingGroup.position.set(config.x, 0, config.z);
+
         // 设置userData用于交互检测
         buildingGroup.userData = { type: 'building', entity: { name: config.name } };
 
@@ -250,7 +253,7 @@ export default class StarterVillage {
      * 创建铁匠铺（带三角形房顶）
      */
     createBlacksmithBuilding() {
-        const config = { name: '铁匠铺', x: -15, z: 5, w: 5, h: 3.5, d: 5, color: 0x654321 };
+        const config = { name: '铁匠铺', x: -15, z: 5, w: 2.5, h: 1.75, d: 2.5, color: 0x654321 };
 
         // 创建房屋主体
         const bodyGeometry = new THREE.BoxGeometry(config.w, config.h, config.d);
@@ -258,52 +261,52 @@ export default class StarterVillage {
             color: config.color
         });
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-        body.position.set(config.x, config.h / 2, config.z);
+        body.position.set(0, config.h / 2, 0);
         body.castShadow = true;
         body.receiveShadow = true;
 
         // 创建三角形房顶
         // 使用ConeGeometry创建三角锥，4个面就是三角形的屋顶
-        const roofHeight = 2.5;
-        const roofGeometry = new THREE.ConeGeometry(4.5, roofHeight, 4);
+        const roofHeight = 1.25;
+        const roofGeometry = new THREE.ConeGeometry(2.25, roofHeight, 4);
         const roofMaterial = new THREE.MeshLambertMaterial({
             color: 0x8b4513 // 深棕色屋顶
         });
         const roof = new THREE.Mesh(roofGeometry, roofMaterial);
         // 房顶位置：在房屋主体上方，考虑高度偏移
-        roof.position.set(config.x, config.h + roofHeight / 2, config.z);
+        roof.position.set(0, config.h + roofHeight / 2, 0);
         // 旋转45度使四棱锥的面对准房屋四边
         roof.rotation.y = Math.PI / 4;
         roof.castShadow = true;
         roof.receiveShadow = true;
 
         // 创建铁匠铺的烟囱
-        const chimneyGeometry = new THREE.BoxGeometry(0.8, 2, 0.8);
+        const chimneyGeometry = new THREE.BoxGeometry(0.4, 1, 0.4);
         const chimneyMaterial = new THREE.MeshLambertMaterial({
             color: 0x4a4a4a // 灰色烟囱
         });
         const chimney = new THREE.Mesh(chimneyGeometry, chimneyMaterial);
-        chimney.position.set(config.x + 1.5, config.h + roofHeight - 0.5, config.z + 1.5);
+        chimney.position.set(0.75, config.h + roofHeight - 0.25, 0.75);
         chimney.castShadow = true;
         chimney.receiveShadow = true;
 
-        // 创建铁匠铺的门
-        const doorGeometry = new THREE.BoxGeometry(1.2, 2, 0.2);
+        // 创建铁匠铺的门（右边）
+        const doorGeometry = new THREE.BoxGeometry(0.1, 1, 0.6);
         const doorMaterial = new THREE.MeshLambertMaterial({
             color: 0x3d2817 // 深棕色门
         });
         const door = new THREE.Mesh(doorGeometry, doorMaterial);
-        door.position.set(config.x, 1, config.z + config.d / 2 + 0.1);
+        door.position.set(config.w / 2 + 0.05, 0.5, 0);
         door.castShadow = true;
         door.receiveShadow = true;
 
         // 创建门把手
-        const handleGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+        const handleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
         const handleMaterial = new THREE.MeshLambertMaterial({
             color: 0xffd700 // 金色把手
         });
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
-        handle.position.set(config.x + 0.4, 1, config.z + config.d / 2 + 0.25);
+        handle.position.set(config.w / 2 + 0.125, 0.5, 0.2);
 
         // 将所有部分组合成一个组
         const buildingGroup = new THREE.Group();
@@ -312,6 +315,9 @@ export default class StarterVillage {
         buildingGroup.add(chimney);
         buildingGroup.add(door);
         buildingGroup.add(handle);
+
+        // 设置Group的位置
+        buildingGroup.position.set(config.x, 0, config.z);
 
         // 设置userData用于交互检测
         buildingGroup.userData = { type: 'building', entity: { name: config.name } };
@@ -324,15 +330,21 @@ export default class StarterVillage {
      * 创建装饰物
      */
     createDecorations() {
-        // 树木（圆锥 + 圆柱）- 添加2棵树后的新位置列表
+        // 树木（圆锥 + 圆柱）- 移到野区的树
         const treePositions = [
-            { x: -10, z: 15 },
             { x: 10, z: 18 },
             { x: -8, z: -8 },
             { x: 8, z: -10 },
-            { x: -20, z: 8 },
-            { x: 18, z: 5 },    // 新增树1
-            { x: -15, z: -18 }  // 新增树2
+            { x: 18, z: 5 },
+            // 野区树木（兔妖区域附近）
+            { x: -18, z: -12 },
+            { x: -22, z: -12 },
+            // 野区树木（木灵区域附近）
+            { x: 18, z: -18 },
+            { x: 22, z: -22 },
+            // 野区树木（石魔区域附近）
+            { x: -3, z: -20 },
+            { x: 3, z: -20 }
         ];
 
         treePositions.forEach((pos, index) => {

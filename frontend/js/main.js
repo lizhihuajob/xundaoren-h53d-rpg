@@ -620,11 +620,23 @@ class Game {
      */
     useSkill(skillId) {
         const result = this.combat.useSkill(skillId);
-        
+
         if (result.success) {
             this.handleCombatResult(result);
         } else {
-            this.ui.showToast(result.message, 'warning');
+            const screenPos = this.renderer.worldToScreen(this.player.mesh.position);
+            if (screenPos) {
+                // 如果没有目标，在角色附近显示提示
+                if (result.message === '没有目标') {
+                    this.ui.showPopupAtPosition(screenPos.x, screenPos.y - 80, '请选择攻击目标', 'warning');
+                } else if (result.message === '目标距离过远') {
+                    this.ui.showPopupAtPosition(screenPos.x, screenPos.y - 80, '目标距离过远', 'warning');
+                } else {
+                    this.ui.showToast(result.message, 'warning');
+                }
+            } else {
+                this.ui.showToast(result.message, 'warning');
+            }
         }
     }
 
