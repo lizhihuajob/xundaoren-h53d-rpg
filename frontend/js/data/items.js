@@ -26,6 +26,17 @@ export const ITEMS = {
         effect: { type: 'mana', value: 30 },
         description: '服用后立即恢复30点法力值'
     },
+    basicHealingPill: {
+        id: 'basicHealingPill',
+        name: '初级疗伤药',
+        icon: '💊',
+        type: 'consumable',
+        stackable: true,
+        maxStack: 99,
+        price: 1,
+        effect: { type: 'heal', value: 20 },
+        description: '初级疗伤药，服用后恢复20点生命值'
+    },
     
     // 材料
     rabbitFur: {

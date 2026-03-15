@@ -9,7 +9,7 @@ export const NPCS = {
         title: '新手村村长',
         color: 0xffffff,
         size: 1.0,
-        position: { x: 0, y: 0, z: -2 },
+        position: { x: 0, y: 0, z: 10 },
         glow: true,
         type: 'quest',
         dialogs: {
@@ -84,7 +84,7 @@ export const NPCS = {
         title: '村庄守卫',
         color: 0xff0000,
         size: 1.05,
-        position: { x: -5, y: 0, z: -5 },
+        position: { x: -5, y: 0, z: 10 },
         type: 'quest',
         dialogs: {
             default: {
@@ -98,6 +98,25 @@ export const NPCS = {
                 text: '不错不错！你已经掌握了基本战斗技巧，可以出去历练了。小心那些妖兽！',
                 options: [
                     { text: '谢谢', action: 'close' }
+                ]
+            }
+        }
+    },
+    doctor: {
+        id: 'doctor',
+        name: '郎中',
+        title: '医馆大夫',
+        color: 0x00ff88,
+        size: 0.95,
+        position: { x: -10, y: 0, z: 15 },
+        type: 'shop',
+        shopItems: ['basicHealingPill'],
+        dialogs: {
+            default: {
+                text: '欢迎来到医馆，我是郎中。这里售卖各种疗伤药品，出门在外，记得备好药品哦！',
+                options: [
+                    { text: '购买药品', action: 'openShop' },
+                    { text: '告辞', action: 'close' }
                 ]
             }
         }
