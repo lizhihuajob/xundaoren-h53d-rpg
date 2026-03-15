@@ -508,6 +508,50 @@ class Game {
         if (this.player.hp <= 0) {
             this.handlePlayerDeath();
         }
+
+        // 检测玩家接近任务NPC，显示任务提示
+        this.checkQuestNPCProximity();
+    }
+
+    checkQuestNPCProximity() {
+        let nearestQuestNPC = null;
+        let nearestDistance = Infinity;
+
+        for (const npc of this.world.npcs) {
+            if (npc.type === 'quest' && npc.mesh) {
+                const distance = npc.getDistanceTo(this.player.position);
+                if (distance < 5 && distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestQuestNPC = npc;
+                }
+            }
+        }
+
+        if (nearestQuestNPC) {
+            const questText = this.getQuestHintText(nearestQuestNPC);
+            if (questText) {
+                this.ui.showQuestHintAtNPC(nearestQuestNPC.mesh, questText);
+            } else {
+                this.ui.hideQuestHint();
+            }
+        } else {
+            this.ui.hideQuestHint();
+        }
+    }
+
+    getQuestHintText(npc) {
+        if (npc.id === 'villageChief') {
+            if (this.player.level < 10 && !this.player.classId) {
+                return '达到10级后可转职';
+            }
+            return '点击对话';
+        } else if (npc.id === 'guard') {
+            if (!this.player.tutorialComplete) {
+                return '接受战斗教学';
+            }
+            return '点击对话';
+        }
+        return '点击对话';
     }
 
     /**
@@ -749,7 +793,7 @@ class Game {
                 
             case 'openShop':
                 this.ui.hideDialog();
-                this.ui.showToast('商店功能开发中...', 'info');
+                this.openShop(this.currentNPC);
                 break;
                 
             case 'openSkills':
@@ -881,6 +925,41 @@ class Game {
     /**
      * 处理玩家死亡
      */
+    openShop(npc) {
+        if (!npc || !npc.shopItems || npc.shopItems.length === 0) {
+            this.ui.showToast('该商店暂无商品', 'warning');
+            return;
+        }
+
+        this.currentShopNPC = npc;
+        this.ui.showShop(npc, this.player, (itemId) => this.buyItem(itemId));
+    }
+
+    buyItem(itemId) {
+        const item = getItem(itemId);
+        if (!item) {
+            this.ui.showToast('物品不存在', 'error');
+            return;
+        }
+
+        if (this.player.gold < item.price) {
+            this.ui.showToast('金币不足', 'warning');
+            return;
+        }
+
+        this.player.gold -= item.price;
+        
+        if (this.player.addItem(item, 1)) {
+            this.ui.showToast(`购买了 ${item.name}`, 'success');
+            this.ui.updateShopGold(this.player.gold);
+            this.ui.updateInventoryPanel(this.player);
+            this.ui.updatePlayerHUD(this.player);
+        } else {
+            this.player.gold += item.price;
+            this.ui.showToast('背包已满', 'warning');
+        }
+    }
+
     handlePlayerDeath() {
         this.ui.showToast('你被击败了！将在原地复活...', 'error');
         

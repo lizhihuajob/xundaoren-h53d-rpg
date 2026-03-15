@@ -101,6 +101,25 @@ export const NPCS = {
                 ]
             }
         }
+    },
+    doctor: {
+        id: 'doctor',
+        name: '医仙·白术',
+        title: '医馆掌柜',
+        color: 0x2e8b57,
+        size: 1.0,
+        position: { x: 10, y: 0, z: -3 },
+        type: 'shop',
+        shopItems: ['basicHealingPill'],
+        dialogs: {
+            default: {
+                text: '这位道友，看你气色不佳，是否需要一些疗伤丹药？我这里有上好的初级疗伤药，只需1金币。',
+                options: [
+                    { text: '打开商店', action: 'openShop' },
+                    { text: '告辞', action: 'close' }
+                ]
+            }
+        }
     }
 };
 

@@ -67,6 +67,7 @@ export default class UIManager {
         this.elements.inventoryPanel = document.getElementById('inventory-panel');
         this.elements.skillsPanel = document.getElementById('skills-panel');
         this.elements.questLog = document.getElementById('quests-panel');
+        this.elements.shopPanel = document.getElementById('shop-panel');
         
         // 对话系统
         this.elements.dialogPanel = document.getElementById('dialog-box');
@@ -300,6 +301,70 @@ export default class UIManager {
         panel.classList.remove('hidden');
     }
 
+    showShop(npc, player, onBuy) {
+        const panel = this.elements.shopPanel;
+        if (!panel) return;
+
+        const titleEl = document.getElementById('shop-title');
+        if (titleEl) titleEl.textContent = npc.name + '的商店';
+
+        const goldEl = document.getElementById('shop-player-gold');
+        if (goldEl) goldEl.textContent = player.gold;
+
+        const itemsContainer = document.getElementById('shop-items');
+        if (!itemsContainer) return;
+
+        itemsContainer.innerHTML = '';
+
+        const shopItemIds = npc.shopItems || [];
+        shopItemIds.forEach(itemId => {
+            const item = getItem(itemId);
+            if (!item) return;
+
+            const itemEl = document.createElement('div');
+            itemEl.className = 'shop-item';
+            itemEl.innerHTML = `
+                <span class="shop-item-icon">${item.icon}</span>
+                <div class="shop-item-info">
+                    <div class="shop-item-name">${item.name}</div>
+                    <div class="shop-item-desc">${item.description}</div>
+                </div>
+                <span class="shop-item-price">${item.price} 金币</span>
+                <button class="shop-item-buy" data-item-id="${item.id}" ${player.gold < item.price ? 'disabled' : ''}>购买</button>
+            `;
+            itemsContainer.appendChild(itemEl);
+        });
+
+        itemsContainer.querySelectorAll('.shop-item-buy').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const itemId = e.target.dataset.itemId;
+                if (onBuy) onBuy(itemId);
+            });
+        });
+
+        const closeBtn = panel.querySelector('.panel-close');
+        if (closeBtn) {
+            const newCloseBtn = closeBtn.cloneNode(true);
+            closeBtn.parentNode.replaceChild(newCloseBtn, closeBtn);
+            newCloseBtn.addEventListener('click', () => {
+                panel.classList.add('hidden');
+            });
+        }
+
+        panel.classList.remove('hidden');
+    }
+
+    hideShop() {
+        if (this.elements.shopPanel) {
+            this.elements.shopPanel.classList.add('hidden');
+        }
+    }
+
+    updateShopGold(gold) {
+        const goldEl = document.getElementById('shop-player-gold');
+        if (goldEl) goldEl.textContent = gold;
+    }
+
     /**
      * 显示Toast通知
      */
@@ -391,6 +456,28 @@ export default class UIManager {
             popup.classList.add('fade-out');
             setTimeout(() => popup.remove(), 300);
         }, 2000);
+    }
+
+    showQuestHintAtNPC(npcMesh, text) {
+        const screenPos = this.game.renderer.worldToScreen(npcMesh.position);
+        if (!screenPos) return;
+
+        const existingHint = document.getElementById('quest-hint-popup');
+        if (existingHint) existingHint.remove();
+
+        const hint = document.createElement('div');
+        hint.id = 'quest-hint-popup';
+        hint.className = 'quest-hint-popup';
+        hint.innerHTML = `<span class="quest-hint-icon">📜</span><span class="quest-hint-text">${text}</span>`;
+        hint.style.left = `${screenPos.x}px`;
+        hint.style.top = `${screenPos.y - 100}px`;
+        
+        document.body.appendChild(hint);
+    }
+
+    hideQuestHint() {
+        const hint = document.getElementById('quest-hint-popup');
+        if (hint) hint.remove();
     }
 
     /**
