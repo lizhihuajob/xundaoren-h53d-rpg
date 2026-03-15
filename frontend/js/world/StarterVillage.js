@@ -133,27 +133,42 @@ export default class StarterVillage {
      */
     createBuildings() {
         const buildingConfigs = [
-            { name: '铁匠铺', x: -15, z: 5, w: 5, h: 3.5, d: 5, color: 0x654321 },
-            { name: '修炼台', x: 15, z: 10, w: 4, h: 2, d: 4, color: 0x4169e1 }
+            { name: '铁匠铺', x: -15, z: 5, w: 5, h: 3.5, d: 5, color: 0x654321, hasRoof: true },
+            { name: '修炼台', x: 15, z: 10, w: 4, h: 2, d: 4, color: 0x4169e1, hasRoof: false },
+            { name: '医馆', x: 15, z: -5, w: 5, h: 3, d: 5, color: 0x2e8b57, hasRoof: true }
         ];
 
         buildingConfigs.forEach(config => {
+            const buildingGroup = new THREE.Group();
+            buildingGroup.position.set(config.x, 0, config.z);
+
             const geometry = new THREE.BoxGeometry(config.w, config.h, config.d);
             const material = new THREE.MeshLambertMaterial({
                 color: config.color
             });
 
             const building = new THREE.Mesh(geometry, material);
-            building.position.set(config.x, config.h / 2, config.z);
+            building.position.y = config.h / 2;
             building.castShadow = true;
             building.receiveShadow = true;
-            building.userData = { type: 'building', entity: { name: config.name } };
+            buildingGroup.add(building);
 
-            this.scene.add(building);
-            this.buildings.push(building);
+            if (config.hasRoof) {
+                const roofGeometry = new THREE.ConeGeometry(Math.max(config.w, config.d) * 0.8, 2, 4);
+                const roofMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+                const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+                roof.position.y = config.h + 1;
+                roof.rotation.y = Math.PI / 4;
+                roof.castShadow = true;
+                buildingGroup.add(roof);
+            }
+
+            buildingGroup.userData = { type: 'building', entity: { name: config.name }, buildingData: { w: config.w, h: config.h, d: config.d } };
+
+            this.scene.add(buildingGroup);
+            this.buildings.push(buildingGroup);
         });
 
-        // 添加一些装饰性的小物件
         this.createDecorations();
     }
 
@@ -365,18 +380,18 @@ export default class StarterVillage {
     checkBuildingCollision(position, playerRadius = 0.5) {
         for (const building of this.buildings) {
             const config = building.userData.entity;
-            const box = building.geometry.parameters;
+            const buildingData = building.userData.buildingData;
             
-            // 获取建筑物的边界（考虑玩家半径）
-            const halfWidth = box.width / 2 + playerRadius;
-            const halfDepth = box.depth / 2 + playerRadius;
+            if (!buildingData) continue;
+            
+            const halfWidth = buildingData.w / 2 + playerRadius;
+            const halfDepth = buildingData.d / 2 + playerRadius;
             
             const minX = building.position.x - halfWidth;
             const maxX = building.position.x + halfWidth;
             const minZ = building.position.z - halfDepth;
             const maxZ = building.position.z + halfDepth;
             
-            // 检查玩家位置是否在建筑物范围内
             if (position.x >= minX && position.x <= maxX &&
                 position.z >= minZ && position.z <= maxZ) {
                 return {
