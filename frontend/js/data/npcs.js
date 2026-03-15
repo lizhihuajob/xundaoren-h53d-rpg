@@ -101,6 +101,25 @@ export const NPCS = {
                 ]
             }
         }
+    },
+    doctor: {
+        id: 'doctor',
+        name: '医仙·白素',
+        title: '医馆大夫',
+        color: 0x00ff88,
+        size: 0.95,
+        position: { x: -6, y: 0, z: -12 },
+        type: 'shop',
+        shopItems: ['basicHealingPill'],
+        dialogs: {
+            default: {
+                text: '欢迎来到医馆，我是白素大夫。这里售卖各种疗伤药品，出门在外，记得备好药品哦！',
+                options: [
+                    { text: '购买药品', action: 'openShop' },
+                    { text: '告辞', action: 'close' }
+                ]
+            }
+        }
     }
 };
 

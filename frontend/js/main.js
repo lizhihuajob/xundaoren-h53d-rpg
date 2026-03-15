@@ -710,15 +710,39 @@ class Game {
      */
     interactWithNPC(npc) {
         if (!npc.canInteract(this.player.position)) {
-            this.ui.showToast('距离太远了', 'warning');
+            // 在NPC头顶显示距离提示，而不是右侧Toast
+            this.ui.showQuestPopup(
+                { x: npc.position.x, y: npc.position.y + 2, z: npc.position.z },
+                '距离太远了，靠近一些',
+                'warning',
+                (pos) => this.renderer.worldToScreen(pos)
+            );
             return;
         }
-        
+
         this.currentNPC = npc;
         npc.lookAtPlayer(this.player.position);
-        
+
         const dialog = npc.getDialog(null, this.player);
         this.ui.showDialog(npc, dialog);
+    }
+
+    /**
+     * 在NPC头顶显示任务提示
+     * @param {string} npcId - NPC的ID
+     * @param {string} message - 提示消息
+     * @param {string} type - 提示类型
+     */
+    showQuestNotification(npcId, message, type = 'quest') {
+        const npc = this.world.getNPC(npcId);
+        if (npc) {
+            this.ui.showQuestPopup(
+                { x: npc.position.x, y: npc.position.y + 2, z: npc.position.z },
+                message,
+                type,
+                (pos) => this.renderer.worldToScreen(pos)
+            );
+        }
     }
 
     /**
@@ -749,7 +773,9 @@ class Game {
                 
             case 'openShop':
                 this.ui.hideDialog();
-                this.ui.showToast('商店功能开发中...', 'info');
+                if (this.currentNPC && this.currentNPC.shopItems) {
+                    this.openShop(this.currentNPC.shopItems);
+                }
                 break;
                 
             case 'openSkills':
@@ -820,6 +846,43 @@ class Game {
         this.ui.updatePlayerHUD(this.player);
         this.ui.updateSkillBar(this.player);
         this.ui.showToast(hadClass ? '重新转职成功！' : '转职成功！', 'success');
+    }
+
+    /**
+     * 打开商店
+     * @param {Array} shopItems - 商店物品ID列表
+     */
+    openShop(shopItems) {
+        this.ui.showShop(shopItems, this.player.gold, (item) => {
+            // 检查金币是否足够
+            if (this.player.gold < item.price) {
+                return { success: false, message: '金币不足' };
+            }
+
+            // 检查背包是否有空间
+            const emptySlot = this.player.inventory.findIndex(slot => slot === null);
+            if (emptySlot === -1) {
+                // 检查是否可以堆叠
+                const stackableSlot = this.player.inventory.findIndex(slot =>
+                    slot && slot.itemId === item.id && slot.count < item.maxStack
+                );
+                if (stackableSlot === -1) {
+                    return { success: false, message: '背包已满' };
+                }
+            }
+
+            // 扣除金币
+            this.player.gold -= item.price;
+
+            // 添加物品到背包
+            this.player.addItem(item, 1);
+
+            // 更新UI
+            this.ui.updatePlayerHUD(this.player);
+            this.ui.updateInventoryPanel(this.player);
+
+            return { success: true, newGold: this.player.gold };
+        });
     }
 
     /**

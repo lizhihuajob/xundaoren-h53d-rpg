@@ -6,7 +6,7 @@
 import { getRealmByLevel, getExpRequired } from '../data/realms.js';
 import { getClass, getAllClasses } from '../data/classes.js';
 import { getBaseSkills, getClassSkills } from '../data/skills.js';
-import { getItem } from '../data/items.js';
+import { getItem, ITEMS } from '../data/items.js';
 
 export default class UIManager {
     constructor(game) {
@@ -301,6 +301,64 @@ export default class UIManager {
     }
 
     /**
+     * 显示商店面板
+     * @param {Array} shopItems - 商店物品ID列表
+     * @param {number} playerGold - 玩家金币
+     * @param {Function} onBuy - 购买回调函数
+     */
+    showShop(shopItems, playerGold, onBuy) {
+        const panel = document.getElementById('shop-panel');
+        const goldEl = document.getElementById('shop-player-gold');
+        const itemsContainer = document.getElementById('shop-items');
+
+        if (!panel || !itemsContainer) return;
+
+        // 更新金币显示
+        if (goldEl) goldEl.textContent = playerGold;
+
+        // 清空并重新填充商品
+        itemsContainer.innerHTML = '';
+
+        shopItems.forEach(itemId => {
+            const item = getItem(itemId);
+            if (!item) return;
+
+            const shopItem = document.createElement('div');
+            shopItem.className = 'shop-item';
+            shopItem.innerHTML = `
+                <div class="shop-item-icon">${item.icon}</div>
+                <div class="shop-item-info">
+                    <div class="shop-item-name">${item.name}</div>
+                    <div class="shop-item-desc">${item.description}</div>
+                </div>
+                <div class="shop-item-price">${item.price} 金币</div>
+                <button class="shop-item-buy" data-item-id="${item.id}" ${playerGold < item.price ? 'disabled' : ''}>
+                    购买
+                </button>
+            `;
+
+            // 绑定购买按钮事件
+            const buyBtn = shopItem.querySelector('.shop-item-buy');
+            buyBtn.addEventListener('click', () => {
+                if (onBuy) {
+                    const result = onBuy(item);
+                    if (result.success) {
+                        this.showToast(`购买成功：${item.name}`, 'success');
+                        // 刷新商店显示
+                        this.showShop(shopItems, result.newGold, onBuy);
+                    } else {
+                        this.showToast(result.message, 'warning');
+                    }
+                }
+            });
+
+            itemsContainer.appendChild(shopItem);
+        });
+
+        panel.classList.remove('hidden');
+    }
+
+    /**
      * 显示Toast通知
      */
     showToast(message, type = 'info', duration = 3000) {
@@ -383,14 +441,42 @@ export default class UIManager {
         popup.textContent = text;
         popup.style.left = `${x}px`;
         popup.style.top = `${y}px`;
-        
+
         document.body.appendChild(popup);
-        
+
         // 动画结束后移除
         setTimeout(() => {
             popup.classList.add('fade-out');
             setTimeout(() => popup.remove(), 300);
         }, 2000);
+    }
+
+    /**
+     * 在NPC头顶显示任务提示
+     * @param {Object} npcPosition - NPC的世界坐标 {x, y, z}
+     * @param {string} text - 显示的文本
+     * @param {string} type - 类型：'warning' | 'info' | 'success' | 'quest'
+     * @param {Function} worldToScreen - 世界坐标转屏幕坐标的函数
+     */
+    showQuestPopup(npcPosition, text, type = 'quest', worldToScreen) {
+        if (!worldToScreen) return;
+
+        const screenPos = worldToScreen(npcPosition);
+        if (!screenPos) return;
+
+        const popup = document.createElement('div');
+        popup.className = `quest-popup popup-${type}`;
+        popup.textContent = text;
+        popup.style.left = `${screenPos.x}px`;
+        popup.style.top = `${screenPos.y - 60}px`; // NPC头顶上方
+
+        document.body.appendChild(popup);
+
+        // 动画结束后移除
+        setTimeout(() => {
+            popup.classList.add('fade-out');
+            setTimeout(() => popup.remove(), 300);
+        }, 3000);
     }
 
     /**
@@ -472,27 +558,27 @@ export default class UIManager {
             // 更新金币
             const goldEl = this.elements.inventoryPanel.querySelector('#player-gold');
             if (goldEl) goldEl.textContent = player.gold;
-            
+
             // 更新物品网格
             const grid = this.elements.inventoryPanel.querySelector('#inventory-grid');
             if (grid) {
                 grid.innerHTML = '';
-                
+
                 // 填充背包（假设最大24格）
                 for (let i = 0; i < 24; i++) {
                     const slot = document.createElement('div');
                     slot.className = 'inventory-slot';
-                    
+
                     // Inventory items are stored as { itemId: 'id', count: N }
                     const invItem = player.inventory[i];
                     if (invItem) {
                         // Resolve full item data
                         const itemData = getItem(invItem.itemId);
-                        
+
                         if (itemData) {
                             // Merge count into item data for display/usage
                             const displayItem = { ...itemData, count: invItem.count };
-                            
+
                             slot.dataset.itemId = displayItem.id;
                             slot.dataset.index = i;
                             slot.innerHTML = `
@@ -503,7 +589,7 @@ export default class UIManager {
                                     <div class="item-desc">${displayItem.description}</div>
                                 </div>
                             `;
-                            
+
                             // 绑定点击事件（使用/装备）
                             slot.addEventListener('click', () => {
                                 if (this.game && this.game.handleItemClick) {
@@ -512,7 +598,7 @@ export default class UIManager {
                             });
                         }
                     }
-                    
+
                     grid.appendChild(slot);
                 }
             }

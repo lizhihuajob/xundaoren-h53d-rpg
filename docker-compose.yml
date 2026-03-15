@@ -5,5 +5,5 @@ services:
     container_name: kimi-xundaoren-h5-rpg
     build: ./frontend
     ports:
-      - "3052:80"
+      - "3053:80"
     restart: unless-stopped

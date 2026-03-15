@@ -55,8 +55,8 @@ export default class Player {
         // 技能冷却
         this.skillCooldowns = {};
         
-        // 背包
-        this.inventory = [];
+        // 背包（初始化为null数组，表示空槽位）
+        this.inventory = new Array(24).fill(null);
         this.maxInventory = 24;
         
         // 已学技能
@@ -501,19 +501,23 @@ export default class Player {
     addItem(item, count = 1) {
         // 检查是否可堆叠
         if (item.stackable) {
-            const existing = this.inventory.find(inv => inv.itemId === item.id);
-            if (existing) {
-                existing.count = Math.min(item.maxStack, existing.count + count);
-                return true;
+            const existingIndex = this.inventory.findIndex(inv => inv && inv.itemId === item.id);
+            if (existingIndex !== -1) {
+                const existing = this.inventory[existingIndex];
+                const newCount = Math.min(item.maxStack, existing.count + count);
+                const added = newCount - existing.count;
+                existing.count = newCount;
+                return added > 0;
             }
         }
-        
-        // 检查背包空间
-        if (this.inventory.length >= this.maxInventory) {
+
+        // 查找空槽位
+        const emptySlot = this.inventory.findIndex(slot => slot === null);
+        if (emptySlot === -1) {
             return false;
         }
-        
-        this.inventory.push({ itemId: item.id, count });
+
+        this.inventory[emptySlot] = { itemId: item.id, count };
         return true;
     }
 
@@ -521,14 +525,14 @@ export default class Player {
      * 移除物品
      */
     removeItem(itemId, count = 1) {
-        const index = this.inventory.findIndex(inv => inv.itemId === itemId);
+        const index = this.inventory.findIndex(inv => inv && inv.itemId === itemId);
         if (index === -1) return false;
-        
+
         this.inventory[index].count -= count;
         if (this.inventory[index].count <= 0) {
-            this.inventory.splice(index, 1);
+            this.inventory[index] = null;
         }
-        
+
         return true;
     }
 
@@ -536,7 +540,7 @@ export default class Player {
      * 检查是否有物品
      */
     hasItem(itemId, count = 1) {
-        const item = this.inventory.find(inv => inv.itemId === itemId);
+        const item = this.inventory.find(inv => inv && inv.itemId === itemId);
         return item && item.count >= count;
     }
 
