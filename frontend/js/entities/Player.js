@@ -41,7 +41,7 @@ export default class Player {
         this.mp = this.maxMp;
         
         // 位置和移动
-        this.position = { x: 0, y: 0, z: 5 };
+        this.position = { x: -15, y: 0, z: -17.5 };
         this.rotation = 0;
         this.isMoving = false;
         this.velocity = { x: 0, z: 0 };

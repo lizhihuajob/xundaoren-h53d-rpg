@@ -24,6 +24,7 @@ export default class NPC {
         this.dialogs = config.dialogs;
         this.shopItems = config.shopItems || [];
         this.hidden = config.hidden || false;
+        this.wanderArea = config.wanderArea || null;
         
         // 3D对象
         this.mesh = null;
@@ -32,6 +33,17 @@ export default class NPC {
         // 交互状态
         this.isInteracting = false;
         this.currentDialog = 'default';
+        
+        // 村民漫游状态
+        this.wanderState = {
+            isWandering: false,
+            targetPosition: null,
+            waitTime: 0,
+            speed: 1.5
+        };
+        
+        // 保存初始位置
+        this.initialPosition = { ...this.position };
     }
 
     /**
@@ -86,6 +98,78 @@ export default class NPC {
         if (this.glowMesh) {
             this.glowMesh.rotation.z += deltaTime * 0.5;
         }
+        
+        // 村民漫游
+        if (this.wanderArea && !this.isInteracting) {
+            this.updateWander(deltaTime);
+        }
+    }
+
+    /**
+     * 更新村民漫游行为
+     */
+    updateWander(deltaTime) {
+        const state = this.wanderState;
+        
+        // 如果在等待
+        if (state.waitTime > 0) {
+            state.waitTime -= deltaTime;
+            return;
+        }
+        
+        // 如果没有目标位置，选择一个新的
+        if (!state.targetPosition) {
+            this.chooseNewWanderTarget();
+        }
+        
+        // 移动向目标
+        if (state.targetPosition) {
+            const dx = state.targetPosition.x - this.position.x;
+            const dz = state.targetPosition.z - this.position.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            
+            if (distance < 0.5) {
+                // 到达目标
+                state.targetPosition = null;
+                state.waitTime = 2 + Math.random() * 3; // 等待2-5秒
+            } else {
+                // 移动
+                const moveDistance = state.speed * deltaTime;
+                const ratio = Math.min(moveDistance / distance, 1);
+                
+                this.position.x += dx * ratio;
+                this.position.z += dz * ratio;
+                
+                // 更新mesh位置
+                if (this.mesh) {
+                    this.mesh.position.x = this.position.x;
+                    this.mesh.position.z = this.position.z;
+                    
+                    // 面向移动方向
+                    const angle = Math.atan2(dx, dz);
+                    this.mesh.rotation.y = angle;
+                }
+                
+                // 更新光环位置
+                if (this.glowMesh) {
+                    this.glowMesh.position.x = this.position.x;
+                    this.glowMesh.position.z = this.position.z;
+                }
+            }
+        }
+    }
+
+    /**
+     * 选择新的漫游目标
+     */
+    chooseNewWanderTarget() {
+        if (!this.wanderArea) return;
+        
+        const area = this.wanderArea;
+        const x = area.minX + Math.random() * (area.maxX - area.minX);
+        const z = area.minZ + Math.random() * (area.maxZ - area.minZ);
+        
+        this.wanderState.targetPosition = { x, z };
     }
 
     /**
