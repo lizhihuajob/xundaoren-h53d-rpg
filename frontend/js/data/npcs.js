@@ -9,7 +9,7 @@ export const NPCS = {
         title: '新手村村长',
         color: 0xffffff,
         size: 1.0,
-        position: { x: 0, y: 0, z: 10 },
+        position: { x: -12, y: 0, z: -4 },
         glow: true,
         type: 'quest',
         dialogs: {
@@ -42,7 +42,7 @@ export const NPCS = {
         title: '铸造大师',
         color: 0xffa500,
         size: 1.1,
-        position: { x: -10, y: 0, z: 5 },
+        position: { x: -7, y: 0, z: -8 },
         type: 'craft',
         dialogs: {
             default: {
@@ -59,7 +59,7 @@ export const NPCS = {
         title: '技能师傅',
         color: 0x0088ff,
         size: 0.95,
-        position: { x: 10, y: 0, z: 5 },
+        position: { x: -6, y: 0, z: -10 },
         type: 'trainer',
         dialogs: {
             default: {
@@ -84,7 +84,7 @@ export const NPCS = {
         title: '村庄守卫',
         color: 0xff0000,
         size: 1.05,
-        position: { x: -5, y: 0, z: 10 },
+        position: { x: 0, y: 0, z: -3 },
         type: 'quest',
         dialogs: {
             default: {
@@ -108,7 +108,7 @@ export const NPCS = {
         title: '医馆大夫',
         color: 0x00ff88,
         size: 0.95,
-        position: { x: -10, y: 0, z: 15 },
+        position: { x: -7, y: 0, z: 0 },
         type: 'shop',
         shopItems: ['basicHealingPill'],
         dialogs: {
@@ -117,6 +117,44 @@ export const NPCS = {
                 options: [
                     { text: '购买药品', action: 'openShop' },
                     { text: '告辞', action: 'close' }
+                ]
+            }
+        }
+    },
+    villager1: {
+        id: 'villager1',
+        name: '村民·阿福',
+        title: '普通村民',
+        color: 0xdeb887,
+        size: 0.9,
+        position: { x: -15, y: 0, z: 2 },
+        type: 'normal',
+        wander: true,
+        wanderRadius: 4,
+        dialogs: {
+            default: {
+                text: '你好啊，外乡人！我们修仙村虽然小，但是个安宁的好地方。',
+                options: [
+                    { text: '再见', action: 'close' }
+                ]
+            }
+        }
+    },
+    villager2: {
+        id: 'villager2',
+        name: '村民·阿花',
+        title: '普通村民',
+        color: 0xffb6c1,
+        size: 0.85,
+        position: { x: -9, y: 0, z: 2 },
+        type: 'normal',
+        wander: true,
+        wanderRadius: 3,
+        dialogs: {
+            default: {
+                text: '听说村子外面有很多妖兽，你可要小心啊！',
+                options: [
+                    { text: '谢谢提醒', action: 'close' }
                 ]
             }
         }
