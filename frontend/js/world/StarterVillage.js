@@ -76,39 +76,86 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 中央广场（浅色石板）- 移动到医馆和铁匠铺前方
-        const plazaGeometry = new THREE.CircleGeometry(8, 32);
+        // 中央广场（浅色石板）- 在新村子中央
+        const plazaGeometry = new THREE.CircleGeometry(6, 32);
         const plazaMaterial = new THREE.MeshLambertMaterial({
             color: 0x808080
         });
         const plaza = new THREE.Mesh(plazaGeometry, plazaMaterial);
         plaza.rotation.x = -Math.PI / 2;
-        plaza.position.set(0, 0.01, 10);
+        plaza.position.set(-12, 0.01, -4);
         plaza.receiveShadow = true;
         this.scene.add(plaza);
-        
-        // 练功区（略微深色）
-        const trainingGeometry = new THREE.PlaneGeometry(15, 15);
-        const trainingMaterial = new THREE.MeshLambertMaterial({ 
+
+        // 广场纹路 - 同心圆装饰
+        for (let i = 1; i <= 3; i++) {
+            const ringGeometry = new THREE.RingGeometry(6 - i * 1.5, 6 - i * 1.5 + 0.25, 32);
+            const ringMaterial = new THREE.MeshLambertMaterial({
+                color: 0x696969,
+                side: THREE.DoubleSide
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.set(-12, 0.02, -4);
+            ring.receiveShadow = true;
+            this.scene.add(ring);
+        }
+
+        // 广场纹路 - 十字线
+        const crossLine1Geometry = new THREE.PlaneGeometry(0.25, 12);
+        const crossLineMaterial = new THREE.MeshLambertMaterial({ color: 0x696969 });
+        const crossLine1 = new THREE.Mesh(crossLine1Geometry, crossLineMaterial);
+        crossLine1.rotation.x = -Math.PI / 2;
+        crossLine1.position.set(-12, 0.02, -4);
+        crossLine1.receiveShadow = true;
+        this.scene.add(crossLine1);
+
+        const crossLine2Geometry = new THREE.PlaneGeometry(12, 0.25);
+        const crossLine2 = new THREE.Mesh(crossLine2Geometry, crossLineMaterial);
+        crossLine2.rotation.x = -Math.PI / 2;
+        crossLine2.position.set(-12, 0.02, -4);
+        crossLine2.receiveShadow = true;
+        this.scene.add(crossLine2);
+
+        // 广场纹路 - 对角线
+        const diagLine1Geometry = new THREE.PlaneGeometry(0.15, 10);
+        const diagLine1 = new THREE.Mesh(diagLine1Geometry, crossLineMaterial);
+        diagLine1.rotation.x = -Math.PI / 2;
+        diagLine1.rotation.z = Math.PI / 4;
+        diagLine1.position.set(-12, 0.02, -4);
+        diagLine1.receiveShadow = true;
+        this.scene.add(diagLine1);
+
+        const diagLine2 = new THREE.Mesh(diagLine1Geometry, crossLineMaterial);
+        diagLine2.rotation.x = -Math.PI / 2;
+        diagLine2.rotation.z = -Math.PI / 4;
+        diagLine2.position.set(-12, 0.02, -4);
+        diagLine2.receiveShadow = true;
+        this.scene.add(diagLine2);
+
+        // 练功区（略微深色）- 村子右下角（新位置）
+        const trainingGeometry = new THREE.PlaneGeometry(8, 8);
+        const trainingMaterial = new THREE.MeshLambertMaterial({
             color: 0x2d4c2d
         });
         const training = new THREE.Mesh(trainingGeometry, trainingMaterial);
         training.rotation.x = -Math.PI / 2;
-        training.position.set(-18, 0.01, -18);
+        training.position.set(-6, 0.01, -10);
         training.receiveShadow = true;
         this.scene.add(training);
     }
 
     /**
-     * 创建围墙边界
+     * 创建围墙边界 - 地图边界墙 + 村子篱笆
      */
     createWalls() {
+        // 1. 创建地图边界围墙（原先的围墙）
         const wallHeight = 3;
         const wallThickness = 1;
-        const wallMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x5c4033 
+        const wallMaterial = new THREE.MeshLambertMaterial({
+            color: 0x5c4033
         });
-        
+
         // 创建四面墙
         const wallConfigs = [
             { w: this.width, h: wallThickness, x: 0, z: -this.height/2 - wallThickness/2 }, // 北
@@ -116,7 +163,7 @@ export default class StarterVillage {
             { w: wallThickness, h: this.height, x: -this.width/2 - wallThickness/2, z: 0 }, // 西
             { w: wallThickness, h: this.height, x: this.width/2 + wallThickness/2, z: 0 }   // 东
         ];
-        
+
         wallConfigs.forEach(config => {
             const geometry = new THREE.BoxGeometry(config.w, wallHeight, config.h);
             const wall = new THREE.Mesh(geometry, wallMaterial);
@@ -126,20 +173,243 @@ export default class StarterVillage {
             this.scene.add(wall);
             this.walls.push(wall);
         });
+
+        // 2. 创建村子篱笆围墙（移动到地图左下角）
+        // 村子范围定义（地图左下角区域）
+        const villageMinX = -22;
+        const villageMaxX = -2;
+        const villageMinZ = -15;
+        const villageMaxZ = 5;
+        const fenceHeight = 2;
+        const postHeight = 2.5;
+        const fenceThickness = 0.15;
+
+        const woodMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+        const postMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+
+        // 创建篱笆围墙
+        const fenceConfigs = [
+            // 北边
+            { startX: villageMinX, endX: villageMaxX, z: villageMinZ, isHorizontal: true },
+            // 南边
+            { startX: villageMinX, endX: villageMaxX, z: villageMaxZ, isHorizontal: true },
+            // 西边
+            { startZ: villageMinZ, endZ: villageMaxZ, x: villageMinX, isHorizontal: false },
+            // 东边（留出门的位置）
+            { startZ: villageMinZ, endZ: -6, x: villageMaxX, isHorizontal: false },
+            { startZ: 0, endZ: villageMaxZ, x: villageMaxX, isHorizontal: false }
+        ];
+
+        fenceConfigs.forEach(config => {
+            if (config.isHorizontal) {
+                // 水平方向的篱笆
+                const length = Math.abs(config.endX - config.startX);
+                const numPosts = Math.floor(length / 2) + 1;
+
+                for (let i = 0; i < numPosts; i++) {
+                    const x = config.startX + i * 2;
+                    // 木桩
+                    const postGeometry = new THREE.BoxGeometry(0.2, postHeight, 0.2);
+                    const post = new THREE.Mesh(postGeometry, postMaterial);
+                    post.position.set(x, postHeight / 2, config.z);
+                    post.castShadow = true;
+                    this.scene.add(post);
+                    this.walls.push(post);
+
+                    // 横栏
+                    if (i < numPosts - 1) {
+                        const railGeometry = new THREE.BoxGeometry(2, 0.1, fenceThickness);
+                        const rail1 = new THREE.Mesh(railGeometry, woodMaterial);
+                        rail1.position.set(x + 1, postHeight * 0.7, config.z);
+                        rail1.castShadow = true;
+                        this.scene.add(rail1);
+                        this.walls.push(rail1);
+
+                        const rail2 = new THREE.Mesh(railGeometry, woodMaterial);
+                        rail2.position.set(x + 1, postHeight * 0.4, config.z);
+                        rail2.castShadow = true;
+                        this.scene.add(rail2);
+                        this.walls.push(rail2);
+                    }
+                }
+            } else {
+                // 垂直方向的篱笆
+                const length = Math.abs(config.endZ - config.startZ);
+                const numPosts = Math.floor(length / 2) + 1;
+
+                for (let i = 0; i < numPosts; i++) {
+                    const z = config.startZ + i * 2;
+                    // 木桩
+                    const postGeometry = new THREE.BoxGeometry(0.2, postHeight, 0.2);
+                    const post = new THREE.Mesh(postGeometry, postMaterial);
+                    post.position.set(config.x, postHeight / 2, z);
+                    post.castShadow = true;
+                    this.scene.add(post);
+                    this.walls.push(post);
+
+                    // 横栏
+                    if (i < numPosts - 1) {
+                        const railGeometry = new THREE.BoxGeometry(fenceThickness, 0.1, 2);
+                        const rail1 = new THREE.Mesh(railGeometry, woodMaterial);
+                        rail1.position.set(config.x, postHeight * 0.7, z + 1);
+                        rail1.castShadow = true;
+                        this.scene.add(rail1);
+                        this.walls.push(rail1);
+
+                        const rail2 = new THREE.Mesh(railGeometry, woodMaterial);
+                        rail2.position.set(config.x, postHeight * 0.4, z + 1);
+                        rail2.castShadow = true;
+                        this.scene.add(rail2);
+                        this.walls.push(rail2);
+                    }
+                }
+            }
+        });
+
+        // 创建大门
+        this.createVillageGate(villageMaxX, -3);
+    }
+
+    /**
+     * 创建村庄大门 - 带牌匾
+     */
+    createVillageGate(x, z) {
+        const gateWidth = 6;
+        const gateHeight = 5;
+        const pillarWidth = 0.8;
+
+        const stoneMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 });
+        const woodMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+
+        // 左门柱
+        const leftPillarGeometry = new THREE.BoxGeometry(pillarWidth, gateHeight, pillarWidth);
+        const leftPillar = new THREE.Mesh(leftPillarGeometry, stoneMaterial);
+        leftPillar.position.set(x, gateHeight / 2, z - gateWidth / 2);
+        leftPillar.castShadow = true;
+        this.scene.add(leftPillar);
+
+        // 右门柱
+        const rightPillar = new THREE.Mesh(leftPillarGeometry, stoneMaterial);
+        rightPillar.position.set(x, gateHeight / 2, z + gateWidth / 2);
+        rightPillar.castShadow = true;
+        this.scene.add(rightPillar);
+
+        // 门楣（横梁）
+        const lintelGeometry = new THREE.BoxGeometry(1, 1.2, gateWidth + 1);
+        const lintel = new THREE.Mesh(lintelGeometry, stoneMaterial);
+        lintel.position.set(x, gateHeight, z);
+        lintel.castShadow = true;
+        this.scene.add(lintel);
+
+        // 牌匾背景
+        const signBgGeometry = new THREE.BoxGeometry(0.3, 1.5, 4);
+        const signBgMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3728 }); // 深棕色木牌
+        const signBg = new THREE.Mesh(signBgGeometry, signBgMaterial);
+        signBg.position.set(x + 0.5, gateHeight, z);
+        signBg.castShadow = true;
+        this.scene.add(signBg);
+
+        // 创建门楼文字"修仙村"
+        this.createGateSign(x + 0.7, gateHeight, z);
+    }
+
+    /**
+     * 创建门楼文字 - 牌匾上的修仙村
+     */
+    createGateSign(x, y, z) {
+        // 使用简单的方块拼出文字效果
+        const signMaterial = new THREE.MeshLambertMaterial({ color: 0xffd700 }); // 金色
+
+        const charGroup = new THREE.Group();
+
+        // "修"字 - 左偏旁（亻）
+        const xiuLeft1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.05), signMaterial);
+        xiuLeft1.position.set(0, 0, -0.8);
+        charGroup.add(xiuLeft1);
+
+        const xiuLeft2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.05), signMaterial);
+        xiuLeft2.position.set(0.1, 0.2, -0.8);
+        charGroup.add(xiuLeft2);
+
+        // "修"字 - 右部分（彡）简化
+        const xiuRight1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.05), signMaterial);
+        xiuRight1.position.set(0.35, 0.3, -0.8);
+        charGroup.add(xiuRight1);
+
+        const xiuRight2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.05), signMaterial);
+        xiuRight2.position.set(0.35, 0, -0.8);
+        charGroup.add(xiuRight2);
+
+        const xiuRight3 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.05), signMaterial);
+        xiuRight3.position.set(0.5, 0.15, -0.8);
+        charGroup.add(xiuRight3);
+
+        // "仙"字 - 左偏旁（亻）
+        const xianLeft1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.05), signMaterial);
+        xianLeft1.position.set(0, 0, 0);
+        charGroup.add(xianLeft1);
+
+        const xianLeft2 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.05), signMaterial);
+        xianLeft2.position.set(0.1, 0.2, 0);
+        charGroup.add(xianLeft2);
+
+        // "仙"字 - 右部分（山）
+        const xianRight1 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.08, 0.05), signMaterial);
+        xianRight1.position.set(0.35, -0.25, 0);
+        charGroup.add(xianRight1);
+
+        const xianRight2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.6, 0.05), signMaterial);
+        xianRight2.position.set(0.25, 0.05, 0);
+        charGroup.add(xianRight2);
+
+        const xianRight3 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.05), signMaterial);
+        xianRight3.position.set(0.45, 0, 0);
+        charGroup.add(xianRight3);
+
+        // "村"字 - 左偏旁（木）
+        const cunLeft1 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.7, 0.05), signMaterial);
+        cunLeft1.position.set(0, 0, 0.8);
+        charGroup.add(cunLeft1);
+
+        const cunLeft2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.05), signMaterial);
+        cunLeft2.position.set(0.15, 0.1, 0.8);
+        charGroup.add(cunLeft2);
+
+        const cunLeft3 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.4, 0.05), signMaterial);
+        cunLeft3.position.set(0.25, 0.1, 0.8);
+        charGroup.add(cunLeft3);
+
+        // "村"字 - 右部分（寸）
+        const cunRight1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.08, 0.05), signMaterial);
+        cunRight1.position.set(0.5, 0.2, 0.8);
+        charGroup.add(cunRight1);
+
+        const cunRight2 = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.5, 0.05), signMaterial);
+        cunRight2.position.set(0.4, -0.05, 0.8);
+        charGroup.add(cunRight2);
+
+        const cunRight3 = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.08, 0.05), signMaterial);
+        cunRight3.position.set(0.52, -0.25, 0.8);
+        charGroup.add(cunRight3);
+
+        // 整体位置调整
+        charGroup.position.set(x, y, z);
+        charGroup.rotation.y = Math.PI / 2;
+        this.scene.add(charGroup);
     }
 
     /**
      * 创建建筑物（简单立方体）
      */
     createBuildings() {
-        // 创建铁匠铺（带三角形房顶）
+        // 创建铁匠铺（带三角形房顶）- 移动到左下角
         this.createBlacksmithBuilding();
 
-        // 创建医馆
+        // 创建医馆 - 移动到左下角
         this.createMedicalHall();
 
-        // 创建修炼台
-        const trainingConfig = { name: '修炼台', x: 15, z: 10, w: 4, h: 2, d: 4, color: 0x4169e1 };
+        // 创建修炼台 - 村子右下角（新位置）
+        const trainingConfig = { name: '修炼台', x: -6, z: -10, w: 3, h: 1.5, d: 3, color: 0x4169e1 };
         const trainingGeometry = new THREE.BoxGeometry(trainingConfig.w, trainingConfig.h, trainingConfig.d);
         const trainingMaterial = new THREE.MeshLambertMaterial({
             color: trainingConfig.color
@@ -152,15 +422,76 @@ export default class StarterVillage {
         this.scene.add(trainingBuilding);
         this.buildings.push(trainingBuilding);
 
+        // 创建民居
+        this.createHouses();
+
         // 添加一些装饰性的小物件
         this.createDecorations();
     }
 
     /**
-     * 创建医馆
+     * 创建民居 - 2个，横向排列（x轴方向）
+     */
+    createHouses() {
+        const houseConfigs = [
+            { x: -18, z: 2, color: 0xdeb887, roofColor: 0x8b4513 },
+            { x: -6, z: 2, color: 0xd2b48c, roofColor: 0xa0522d }
+        ];
+
+        houseConfigs.forEach((config, index) => {
+            const houseGroup = new THREE.Group();
+
+            // 房屋主体
+            const bodyGeometry = new THREE.BoxGeometry(2.5, 2, 2.5);
+            const bodyMaterial = new THREE.MeshLambertMaterial({ color: config.color });
+            const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+            body.position.set(0, 1, 0);
+            body.castShadow = true;
+            body.receiveShadow = true;
+            houseGroup.add(body);
+
+            // 三角形房顶
+            const roofHeight = 1;
+            const roofGeometry = new THREE.ConeGeometry(2, roofHeight, 4);
+            const roofMaterial = new THREE.MeshLambertMaterial({ color: config.roofColor });
+            const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+            roof.position.set(0, 2 + roofHeight / 2, 0);
+            roof.rotation.y = Math.PI / 4;
+            roof.castShadow = true;
+            houseGroup.add(roof);
+
+            // 门
+            const doorGeometry = new THREE.BoxGeometry(0.1, 1.2, 0.6);
+            const doorMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
+            const door = new THREE.Mesh(doorGeometry, doorMaterial);
+            door.position.set(1.3, 0.6, 0);
+            houseGroup.add(door);
+
+            // 窗户
+            const windowGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.5);
+            const windowMaterial = new THREE.MeshLambertMaterial({ color: 0x87ceeb });
+            const window1 = new THREE.Mesh(windowGeometry, windowMaterial);
+            window1.position.set(1.3, 1.5, -0.6);
+            houseGroup.add(window1);
+
+            const window2 = new THREE.Mesh(windowGeometry, windowMaterial);
+            window2.position.set(1.3, 1.5, 0.6);
+            houseGroup.add(window2);
+
+            // 设置位置
+            houseGroup.position.set(config.x, 0, config.z);
+            houseGroup.userData = { type: 'building', entity: { name: `民居${index + 1}` } };
+
+            this.scene.add(houseGroup);
+            this.buildings.push(houseGroup);
+        });
+    }
+
+    /**
+     * 创建医馆 - 向右移动，避免篱笆穿过建筑
      */
     createMedicalHall() {
-        const config = { name: '医馆', x: -15, z: 15, w: 3, h: 2, d: 2.5, color: 0xf5f5dc };
+        const config = { name: '医馆', x: -10, z: 0, w: 3, h: 2, d: 2.5, color: 0xf5f5dc };
 
         // 创建房屋主体
         const bodyGeometry = new THREE.BoxGeometry(config.w, config.h, config.d);
@@ -250,10 +581,10 @@ export default class StarterVillage {
     }
 
     /**
-     * 创建铁匠铺（带三角形房顶）
+     * 创建铁匠铺（带三角形房顶）- 向右移动，避免篱笆穿过建筑
      */
     createBlacksmithBuilding() {
-        const config = { name: '铁匠铺', x: -15, z: 5, w: 2.5, h: 1.75, d: 2.5, color: 0x654321 };
+        const config = { name: '铁匠铺', x: -10, z: -8, w: 2.5, h: 1.75, d: 2.5, color: 0x654321 };
 
         // 创建房屋主体
         const bodyGeometry = new THREE.BoxGeometry(config.w, config.h, config.d);
