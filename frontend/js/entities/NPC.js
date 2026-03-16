@@ -32,6 +32,13 @@ export default class NPC {
         // 交互状态
         this.isInteracting = false;
         this.currentDialog = 'default';
+        
+        // 游荡行为
+        this.isWandering = config.isWandering || false;
+        this.wanderArea = config.wanderArea || { radius: 3 };
+        this.wanderTarget = null;
+        this.wanderTimer = 0;
+        this.moveSpeed = config.moveSpeed || 1.0;
     }
 
     /**
@@ -85,6 +92,65 @@ export default class NPC {
         // 光环旋转动画
         if (this.glowMesh) {
             this.glowMesh.rotation.z += deltaTime * 0.5;
+        }
+        
+        // 游荡行为
+        if (this.isWandering) {
+            this.updateWandering(deltaTime);
+        }
+    }
+    
+    /**
+     * 更新游荡行为
+     */
+    updateWandering(deltaTime) {
+        this.wanderTimer -= deltaTime;
+        
+        if (this.wanderTimer <= 0) {
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * this.wanderArea.radius;
+            let targetX = this.position.x + Math.cos(angle) * distance;
+            let targetZ = this.position.z + Math.sin(angle) * distance;
+            
+            if (this.wanderArea.minX !== undefined) {
+                targetX = Math.max(this.wanderArea.minX, Math.min(this.wanderArea.maxX, targetX));
+            }
+            if (this.wanderArea.minZ !== undefined) {
+                targetZ = Math.max(this.wanderArea.minZ, Math.min(this.wanderArea.maxZ, targetZ));
+            }
+            
+            this.wanderTarget = { x: targetX, z: targetZ };
+            this.wanderTimer = 2 + Math.random() * 3;
+        }
+        
+        if (this.wanderTarget && this.mesh) {
+            const dx = this.wanderTarget.x - this.position.x;
+            const dz = this.wanderTarget.z - this.position.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
+            
+            if (distance > 0.1) {
+                const moveX = (dx / distance) * this.moveSpeed * deltaTime;
+                const moveZ = (dz / distance) * this.moveSpeed * deltaTime;
+                
+                this.position.x += moveX;
+                this.position.z += moveZ;
+                
+                if (this.wanderArea.minX !== undefined) {
+                    this.position.x = Math.max(this.wanderArea.minX, Math.min(this.wanderArea.maxX, this.position.x));
+                    this.position.z = Math.max(this.wanderArea.minZ, Math.min(this.wanderArea.maxZ, this.position.z));
+                }
+                
+                this.mesh.position.x = this.position.x;
+                this.mesh.position.z = this.position.z;
+                
+                if (this.glowMesh) {
+                    this.glowMesh.position.x = this.position.x;
+                    this.glowMesh.position.z = this.position.z;
+                }
+                
+                const angle = Math.atan2(dx, dz);
+                this.mesh.rotation.y = angle;
+            }
         }
     }
 
