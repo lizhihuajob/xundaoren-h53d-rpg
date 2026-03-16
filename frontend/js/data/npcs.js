@@ -9,7 +9,7 @@ export const NPCS = {
         title: '新手村村长',
         color: 0xffffff,
         size: 1.0,
-        position: { x: 0, y: 0, z: 10 },
+        position: { x: -12, y: 0, z: 16 },
         glow: true,
         type: 'quest',
         dialogs: {
@@ -42,7 +42,7 @@ export const NPCS = {
         title: '铸造大师',
         color: 0xffa500,
         size: 1.1,
-        position: { x: -10, y: 0, z: 5 },
+        position: { x: -20, y: 0, z: 14 },
         type: 'craft',
         dialogs: {
             default: {
@@ -59,7 +59,7 @@ export const NPCS = {
         title: '技能师傅',
         color: 0x0088ff,
         size: 0.95,
-        position: { x: 10, y: 0, z: 5 },
+        position: { x: -6, y: 0, z: 20 },
         type: 'trainer',
         dialogs: {
             default: {
@@ -84,7 +84,7 @@ export const NPCS = {
         title: '村庄守卫',
         color: 0xff0000,
         size: 1.05,
-        position: { x: -5, y: 0, z: 10 },
+        position: { x: -1, y: 0, z: 16 },
         type: 'quest',
         dialogs: {
             default: {
@@ -108,7 +108,7 @@ export const NPCS = {
         title: '医馆大夫',
         color: 0x00ff88,
         size: 0.95,
-        position: { x: -10, y: 0, z: 15 },
+        position: { x: -20, y: 0, z: 19 },
         type: 'shop',
         shopItems: ['basicHealingPill'],
         dialogs: {
@@ -117,6 +117,46 @@ export const NPCS = {
                 options: [
                     { text: '购买药品', action: 'openShop' },
                     { text: '告辞', action: 'close' }
+                ]
+            }
+        }
+    },
+    villager1: {
+        id: 'villager1',
+        name: '村民·王二',
+        title: '修仙村村民',
+        color: 0x90ee90,
+        size: 0.9,
+        position: { x: -10, y: 0, z: 16 },
+        isWandering: true,
+        wanderArea: { radius: 6, minX: -22, maxX: -2, minZ: 10, maxZ: 22 },
+        moveSpeed: 0.8,
+        type: 'villager',
+        dialogs: {
+            default: {
+                text: '今天天气不错，适合修炼！',
+                options: [
+                    { text: '是啊', action: 'close' }
+                ]
+            }
+        }
+    },
+    villager2: {
+        id: 'villager2',
+        name: '村民·张三',
+        title: '修仙村村民',
+        color: 0xffe4b5,
+        size: 0.9,
+        position: { x: -14, y: 0, z: 14 },
+        isWandering: true,
+        wanderArea: { radius: 6, minX: -22, maxX: -2, minZ: 10, maxZ: 22 },
+        moveSpeed: 0.7,
+        type: 'villager',
+        dialogs: {
+            default: {
+                text: '村子最近来了不少新人，希望他们能好好修炼。',
+                options: [
+                    { text: '我会努力的', action: 'close' }
                 ]
             }
         }
