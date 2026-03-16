@@ -9,7 +9,7 @@ export const NPCS = {
         title: '新手村村长',
         color: 0xffffff,
         size: 1.0,
-        position: { x: 0, y: 0, z: 10 },
+        position: { x: -15, y: 0, z: -17.5 },
         glow: true,
         type: 'quest',
         dialogs: {
@@ -42,7 +42,7 @@ export const NPCS = {
         title: '铸造大师',
         color: 0xffa500,
         size: 1.1,
-        position: { x: -10, y: 0, z: 5 },
+        position: { x: -18, y: 0, z: -23 },
         type: 'craft',
         dialogs: {
             default: {
@@ -59,7 +59,7 @@ export const NPCS = {
         title: '技能师傅',
         color: 0x0088ff,
         size: 0.95,
-        position: { x: 10, y: 0, z: 5 },
+        position: { x: -10, y: 0, z: -20 },
         type: 'trainer',
         dialogs: {
             default: {
@@ -84,7 +84,7 @@ export const NPCS = {
         title: '村庄守卫',
         color: 0xff0000,
         size: 1.05,
-        position: { x: -5, y: 0, z: 10 },
+        position: { x: -5, y: 0, z: -17.5 },
         type: 'quest',
         dialogs: {
             default: {
@@ -108,7 +108,7 @@ export const NPCS = {
         title: '医馆大夫',
         color: 0x00ff88,
         size: 0.95,
-        position: { x: -10, y: 0, z: 15 },
+        position: { x: -18, y: 0, z: -20 },
         type: 'shop',
         shopItems: ['basicHealingPill'],
         dialogs: {
@@ -117,6 +117,48 @@ export const NPCS = {
                 options: [
                     { text: '购买药品', action: 'openShop' },
                     { text: '告辞', action: 'close' }
+                ]
+            }
+        }
+    },
+    villager1: {
+        id: 'villager1',
+        name: '村民·老张',
+        title: '普通村民',
+        color: 0xdeb887,
+        size: 0.85,
+        position: { x: -15, y: 0, z: -15 },
+        type: 'villager',
+        wanderArea: {
+            minX: -23, maxX: -7,
+            minZ: -23, maxZ: -12
+        },
+        dialogs: {
+            default: {
+                text: '这位道友，欢迎来到修仙村！这里是个安静祥和的地方，适合修炼。',
+                options: [
+                    { text: '谢谢', action: 'close' }
+                ]
+            }
+        }
+    },
+    villager2: {
+        id: 'villager2',
+        name: '村民·小翠',
+        title: '普通村民',
+        color: 0x98fb98,
+        size: 0.8,
+        position: { x: -12, y: 0, z: -18 },
+        type: 'villager',
+        wanderArea: {
+            minX: -23, maxX: -7,
+            minZ: -23, maxZ: -12
+        },
+        dialogs: {
+            default: {
+                text: '你好呀！村子东边的大门是通往外界的出口，外面有很多妖兽，要小心哦！',
+                options: [
+                    { text: '知道了', action: 'close' }
                 ]
             }
         }

@@ -962,10 +962,10 @@ class Game {
         // 复活
         this.player.hp = this.player.maxHp;
         this.player.mp = this.player.maxMp;
-        this.player.position = { x: 0, y: 0, z: 5 };
+        this.player.position = { x: -15, y: 0, z: -17.5 };
         
         if (this.player.mesh) {
-            this.player.mesh.position.set(0, 0.9, 5);
+            this.player.mesh.position.set(-15, 0.9, -17.5);
         }
         
         this.combat.clearTarget();
