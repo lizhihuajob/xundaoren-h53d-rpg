@@ -188,22 +188,321 @@ export default class StarterVillage {
         // 创建医馆
         this.createMedicalHall();
 
-        // 创建修炼台 - 移动到医馆和铁匠铺附近并排
-        const trainingConfig = { name: '修炼台', x: -6, z: 12, w: 4, h: 2, d: 4, color: 0x4169e1 };
-        const trainingGeometry = new THREE.BoxGeometry(trainingConfig.w, trainingConfig.h, trainingConfig.d);
-        const trainingMaterial = new THREE.MeshLambertMaterial({
-            color: trainingConfig.color
-        });
-        const trainingBuilding = new THREE.Mesh(trainingGeometry, trainingMaterial);
-        trainingBuilding.position.set(trainingConfig.x, trainingConfig.h / 2, trainingConfig.z);
-        trainingBuilding.castShadow = true;
-        trainingBuilding.receiveShadow = true;
-        trainingBuilding.userData = { type: 'building', entity: { name: trainingConfig.name } };
-        this.scene.add(trainingBuilding);
-        this.buildings.push(trainingBuilding);
+        // 创建修炼台（五边形，带台阶）
+        this.createTrainingPlatform();
+
+        // 创建村庄篱笆
+        this.createVillageFence();
 
         // 添加一些装饰性的小物件
         this.createDecorations();
+    }
+
+    /**
+     * 创建修炼台（多层五边形叠加，大的在下小的在上，带台阶）
+     * 位置：医馆和铁匠铺附近
+     * 台阶朝向南面（朝向广场）
+     */
+    createTrainingPlatform() {
+        const config = {
+            name: '修炼台',
+            x: -6,
+            z: 12,
+            sides: 5,
+            layers: [
+                { radius: 3.5, height: 0.4, color: 0x4169e1 },
+                { radius: 2.8, height: 0.35, color: 0x3a5fcd },
+                { radius: 2.1, height: 0.3, color: 0x2e4dbd },
+                { radius: 1.4, height: 0.25, color: 0x2240ad },
+                { radius: 0.7, height: 0.2, color: 0x1633a0 }
+            ]
+        };
+        
+        const platformGroup = new THREE.Group();
+        platformGroup.position.set(config.x, 0, config.z);
+        
+        let currentHeight = 0;
+        
+        config.layers.forEach((layer, index) => {
+            const layerMaterial = new THREE.MeshLambertMaterial({
+                color: layer.color,
+                emissive: new THREE.Color(layer.color).multiplyScalar(0.1)
+            });
+            
+            const layerGeometry = new THREE.CylinderGeometry(
+                layer.radius,
+                layer.radius,
+                layer.height,
+                config.sides
+            );
+            const layerMesh = new THREE.Mesh(layerGeometry, layerMaterial);
+            layerMesh.position.y = currentHeight + layer.height / 2;
+            layerMesh.rotation.y = Math.PI / config.sides;
+            layerMesh.castShadow = true;
+            layerMesh.receiveShadow = true;
+            platformGroup.add(layerMesh);
+            
+            const edgeGeometry = new THREE.TorusGeometry(layer.radius, 0.06, 8, config.sides);
+            const edgeMaterial = new THREE.MeshLambertMaterial({ color: 0xffd700 });
+            const edge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+            edge.rotation.x = Math.PI / 2;
+            edge.rotation.z = Math.PI / config.sides;
+            edge.position.y = currentHeight + layer.height;
+            platformGroup.add(edge);
+            
+            currentHeight += layer.height;
+        });
+        
+        const topRadius = config.layers[config.layers.length - 1].radius;
+        
+        const centerGeometry = new THREE.CircleGeometry(0.4, config.sides);
+        const centerMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ff88,
+            transparent: true,
+            opacity: 0.6
+        });
+        const center = new THREE.Mesh(centerGeometry, centerMaterial);
+        center.rotation.x = -Math.PI / 2;
+        center.rotation.z = Math.PI / config.sides;
+        center.position.y = currentHeight + 0.01;
+        platformGroup.add(center);
+        
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: 0x6699ff,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide
+        });
+        const glowRingGeometry = new THREE.RingGeometry(topRadius - 0.1, topRadius + 0.2, config.sides);
+        const glowRing = new THREE.Mesh(glowRingGeometry, glowMaterial);
+        glowRing.rotation.x = -Math.PI / 2;
+        glowRing.rotation.z = Math.PI / config.sides;
+        glowRing.position.y = currentHeight + 0.02;
+        platformGroup.add(glowRing);
+        
+        const stepMaterial = new THREE.MeshLambertMaterial({ color: 0x3a5fcd });
+        const stepEdgeMaterial = new THREE.MeshLambertMaterial({ color: 0xffd700 });
+        const bottomRadius = config.layers[0].radius;
+        const stepCount = 5;
+        const stepWidth = 2;
+        const stepDepth = 0.5;
+        const stepHeight = currentHeight / stepCount;
+        const stepStartZ = bottomRadius + 0.3;
+        
+        for (let i = 0; i < stepCount; i++) {
+            const stepGeometry = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
+            const step = new THREE.Mesh(stepGeometry, stepMaterial);
+            step.position.set(0, stepHeight * (i + 0.5), stepStartZ + stepDepth * i);
+            step.castShadow = true;
+            step.receiveShadow = true;
+            platformGroup.add(step);
+            
+            const stepEdgeGeometry = new THREE.BoxGeometry(stepWidth + 0.1, 0.05, 0.1);
+            const stepEdge = new THREE.Mesh(stepEdgeGeometry, stepEdgeMaterial);
+            stepEdge.position.set(0, stepHeight * (i + 1), stepStartZ + stepDepth * i);
+            platformGroup.add(stepEdge);
+        }
+        
+        platformGroup.userData = { type: 'building', entity: { name: config.name } };
+        
+        this.scene.add(platformGroup);
+        this.buildings.push(platformGroup);
+        
+        console.log('修炼台创建完成（多层五边形叠加，带台阶）');
+    }
+
+    /**
+     * 创建村庄篱笆
+     * 村庄广场中心：X = -18, Z = 18
+     * 修炼台位置：X = -6, Z = 12
+     * 坐标系：X轴西(-) ← → 东(+)，Z轴南(-) ← → 北(+)
+     * 大门设在东面
+     * 篱笆需要包围村庄广场和修炼台
+     */
+    createVillageFence() {
+        const plazaWidth = 16;
+        const plazaDepth = 12;
+        const plazaX = -18;
+        const plazaZ = 18;
+        
+        const trainingPlatformX = -6;
+        const trainingPlatformZ = 12;
+        const trainingPlatformRadius = 3.5;
+        
+        const fenceHeight = 1.2;
+        const postSpacing = 2;
+        const postRadius = 0.08;
+        const railHeight = 0.6;
+        
+        const woodMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+        const darkWoodMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        
+        const fenceBounds = {
+            minX: plazaX - plazaWidth / 2 - 1,
+            maxX: Math.max(plazaX + plazaWidth / 2 + 1, trainingPlatformX + trainingPlatformRadius + 1.5),
+            minZ: Math.min(plazaZ - plazaDepth / 2 - 1, trainingPlatformZ - trainingPlatformRadius - 1.5),
+            maxZ: plazaZ + plazaDepth / 2 + 1
+        };
+        
+        const gateWidth = 3;
+        const gateX = fenceBounds.maxX;
+        const gateZ = plazaZ;
+        
+        const createFencePost = (x, z, isCorner = false) => {
+            const height = isCorner ? fenceHeight + 0.3 : fenceHeight;
+            const geometry = new THREE.CylinderGeometry(postRadius, postRadius * 1.2, height, 8);
+            const post = new THREE.Mesh(geometry, isCorner ? darkWoodMaterial : woodMaterial);
+            post.position.set(x, height / 2, z);
+            post.castShadow = true;
+            post.receiveShadow = true;
+            return post;
+        };
+        
+        const createFenceRail = (x1, z1, x2, z2, height) => {
+            const length = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
+            const geometry = new THREE.BoxGeometry(length, 0.08, 0.05);
+            const rail = new THREE.Mesh(geometry, woodMaterial);
+            
+            const midX = (x1 + x2) / 2;
+            const midZ = (z1 + z2) / 2;
+            rail.position.set(midX, height, midZ);
+            
+            const angle = Math.atan2(z2 - z1, x2 - x1);
+            rail.rotation.y = -angle;
+            
+            rail.castShadow = true;
+            rail.receiveShadow = true;
+            return rail;
+        };
+        
+        const createGatePost = (x, z) => {
+            const group = new THREE.Group();
+            
+            const postGeometry = new THREE.CylinderGeometry(0.12, 0.15, fenceHeight + 0.5, 8);
+            const post = new THREE.Mesh(postGeometry, darkWoodMaterial);
+            post.position.set(0, (fenceHeight + 0.5) / 2, 0);
+            post.castShadow = true;
+            group.add(post);
+            
+            const topGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+            const top = new THREE.Mesh(topGeometry, darkWoodMaterial);
+            top.position.set(0, fenceHeight + 0.5 + 0.1, 0);
+            top.castShadow = true;
+            group.add(top);
+            
+            group.position.set(x, 0, z);
+            return group;
+        };
+        
+        const fenceGroup = new THREE.Group();
+        fenceGroup.userData = { type: 'fence', entity: { name: '村庄篱笆' } };
+        
+        const posts = [];
+        const rails = [];
+        
+        const northSide = [];
+        for (let x = fenceBounds.minX; x <= fenceBounds.maxX; x += postSpacing) {
+            northSide.push({ x, z: fenceBounds.maxZ });
+        }
+        if (northSide[northSide.length - 1].x < fenceBounds.maxX) {
+            northSide.push({ x: fenceBounds.maxX, z: fenceBounds.maxZ });
+        }
+        
+        const southSide = [];
+        for (let x = fenceBounds.minX; x <= fenceBounds.maxX; x += postSpacing) {
+            southSide.push({ x, z: fenceBounds.minZ });
+        }
+        if (southSide[southSide.length - 1].x < fenceBounds.maxX) {
+            southSide.push({ x: fenceBounds.maxX, z: fenceBounds.minZ });
+        }
+        
+        const westSide = [];
+        for (let z = fenceBounds.minZ + postSpacing; z < fenceBounds.maxZ; z += postSpacing) {
+            westSide.push({ x: fenceBounds.minX, z });
+        }
+        
+        const gateMinZ = gateZ - gateWidth / 2;
+        const gateMaxZ = gateZ + gateWidth / 2;
+        
+        const eastSideNorth = [];
+        for (let z = gateMaxZ + postSpacing; z < fenceBounds.maxZ; z += postSpacing) {
+            eastSideNorth.push({ x: fenceBounds.maxX, z });
+        }
+        if (eastSideNorth.length === 0 || eastSideNorth[eastSideNorth.length - 1].z < fenceBounds.maxZ - 0.1) {
+            if (gateMaxZ + postSpacing < fenceBounds.maxZ) {
+                eastSideNorth.push({ x: fenceBounds.maxX, z: fenceBounds.maxZ });
+            }
+        }
+        
+        const eastSideSouth = [];
+        for (let z = fenceBounds.minZ + postSpacing; z < gateMinZ; z += postSpacing) {
+            eastSideSouth.push({ x: fenceBounds.maxX, z });
+        }
+        
+        const addFenceSection = (points, hasGate = false) => {
+            for (let i = 0; i < points.length; i++) {
+                const isCorner = i === 0 || i === points.length - 1;
+                const post = createFencePost(points[i].x, points[i].z, isCorner);
+                fenceGroup.add(post);
+                posts.push(post);
+                
+                if (i < points.length - 1) {
+                    const rail1 = createFenceRail(
+                        points[i].x, points[i].z,
+                        points[i + 1].x, points[i + 1].z,
+                        railHeight
+                    );
+                    const rail2 = createFenceRail(
+                        points[i].x, points[i].z,
+                        points[i + 1].x, points[i + 1].z,
+                        fenceHeight - 0.2
+                    );
+                    fenceGroup.add(rail1);
+                    fenceGroup.add(rail2);
+                    rails.push(rail1, rail2);
+                }
+            }
+        };
+        
+        addFenceSection(northSide);
+        addFenceSection(southSide);
+        addFenceSection(westSide);
+        addFenceSection(eastSideNorth);
+        addFenceSection(eastSideSouth);
+        
+        const gatePostNorth = createGatePost(gateX, gateMaxZ);
+        const gatePostSouth = createGatePost(gateX, gateMinZ);
+        fenceGroup.add(gatePostNorth);
+        fenceGroup.add(gatePostSouth);
+        
+        if (eastSideNorth.length > 0) {
+            const lastPostNorth = eastSideNorth[eastSideNorth.length - 1];
+            const rail1 = createFenceRail(lastPostNorth.x, lastPostNorth.z, gateX, gateMaxZ, railHeight);
+            const rail2 = createFenceRail(lastPostNorth.x, lastPostNorth.z, gateX, gateMaxZ, fenceHeight - 0.2);
+            fenceGroup.add(rail1);
+            fenceGroup.add(rail2);
+        }
+        
+        if (eastSideSouth.length > 0) {
+            const lastPostSouth = eastSideSouth[eastSideSouth.length - 1];
+            const rail1 = createFenceRail(lastPostSouth.x, lastPostSouth.z, gateX, gateMinZ, railHeight);
+            const rail2 = createFenceRail(lastPostSouth.x, lastPostSouth.z, gateX, gateMinZ, fenceHeight - 0.2);
+            fenceGroup.add(rail1);
+            fenceGroup.add(rail2);
+        }
+        
+        const gateArchGeometry = new THREE.BoxGeometry(0.15, 0.15, gateWidth + 0.3);
+        const gateArch = new THREE.Mesh(gateArchGeometry, darkWoodMaterial);
+        gateArch.position.set(gateX, fenceHeight + 0.3, gateZ);
+        gateArch.castShadow = true;
+        fenceGroup.add(gateArch);
+        
+        this.scene.add(fenceGroup);
+        this.decorations.push(fenceGroup);
+        
+        this.gatePosition = { x: gateX + 1, y: 0, z: gateZ };
+        
+        console.log('村庄篱笆创建完成，大门位于东面');
     }
 
     /**
