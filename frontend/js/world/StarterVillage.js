@@ -76,12 +76,12 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 中央广场（长方形石板）- 移动到医馆和铁匠铺前方
+        // 中央广场（棋盘格样式）- 移动到医馆和铁匠铺前方
         const plazaWidth = 16;
         const plazaDepth = 12;
         const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaDepth);
         const plazaMaterial = new THREE.MeshLambertMaterial({
-            color: 0x808080
+            color: 0x707070
         });
         const plaza = new THREE.Mesh(plazaGeometry, plazaMaterial);
         plaza.rotation.x = -Math.PI / 2;
@@ -89,40 +89,30 @@ export default class StarterVillage {
         plaza.receiveShadow = true;
         this.scene.add(plaza);
 
-        // 广场纹路 - 横向条纹
-        const stripeCount = 6;
-        const stripeWidth = plazaWidth;
-        const stripeDepth = 0.3;
-        const stripeSpacing = plazaDepth / stripeCount;
+        // 广场棋盘格纹路
+        const gridRows = 4; // 纵向格子数
+        const gridCols = 6; // 横向格子数
+        const cellWidth = plazaWidth / gridCols;
+        const cellDepth = plazaDepth / gridRows;
         
-        for (let i = 0; i < stripeCount; i++) {
-            const stripeGeometry = new THREE.PlaneGeometry(stripeWidth, stripeDepth);
-            const stripeMaterial = new THREE.MeshLambertMaterial({
-                color: 0x606060
-            });
-            const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
-            stripe.rotation.x = -Math.PI / 2;
-            stripe.position.set(0, 0.02, 10 - plazaDepth / 2 + stripeSpacing * (i + 0.5));
-            stripe.receiveShadow = true;
-            this.scene.add(stripe);
-        }
-
-        // 广场纹路 - 纵向装饰线
-        const verticalLineCount = 4;
-        const verticalLineWidth = 0.2;
-        const verticalLineDepth = plazaDepth;
-        const verticalSpacing = plazaWidth / verticalLineCount;
-        
-        for (let i = 1; i < verticalLineCount; i++) {
-            const lineGeometry = new THREE.PlaneGeometry(verticalLineWidth, verticalLineDepth);
-            const lineMaterial = new THREE.MeshLambertMaterial({
-                color: 0x505050
-            });
-            const line = new THREE.Mesh(lineGeometry, lineMaterial);
-            line.rotation.x = -Math.PI / 2;
-            line.position.set(-plazaWidth / 2 + verticalSpacing * i, 0.015, 10);
-            line.receiveShadow = true;
-            this.scene.add(line);
+        for (let row = 0; row < gridRows; row++) {
+            for (let col = 0; col < gridCols; col++) {
+                // 棋盘格效果：交替颜色
+                const isDark = (row + col) % 2 === 1;
+                const cellGeometry = new THREE.PlaneGeometry(cellWidth, cellDepth);
+                const cellMaterial = new THREE.MeshLambertMaterial({
+                    color: isDark ? 0x505050 : 0x606060
+                });
+                const cell = new THREE.Mesh(cellGeometry, cellMaterial);
+                cell.rotation.x = -Math.PI / 2;
+                cell.position.set(
+                    -plazaWidth / 2 + cellWidth * (col + 0.5),
+                    0.02,
+                    10 - plazaDepth / 2 + cellDepth * (row + 0.5)
+                );
+                cell.receiveShadow = true;
+                this.scene.add(cell);
+            }
         }
 
         // 广场边缘装饰
@@ -469,6 +459,11 @@ export default class StarterVillage {
                 this.scene.add(npc.glowMesh);
             }
             
+            // 添加头顶名称标签到场景
+            if (npc.nameLabel) {
+                this.scene.add(npc.nameLabel);
+            }
+            
             this.npcs.push(npc);
         });
         
@@ -495,10 +490,15 @@ export default class StarterVillage {
     /**
      * 更新场景
      */
-    update(deltaTime, player) {
+    update(deltaTime, player, camera) {
         // 更新NPC
         this.npcs.forEach(npc => {
             npc.update(deltaTime);
+            
+            // 更新名称标签朝向，使其始终面向相机
+            if (npc.nameLabel && camera) {
+                npc.nameLabel.lookAt(camera.position);
+            }
         });
         
         // 更新怪物

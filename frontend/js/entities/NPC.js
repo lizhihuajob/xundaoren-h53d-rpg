@@ -28,6 +28,7 @@ export default class NPC {
         // 3D对象
         this.mesh = null;
         this.glowMesh = null;
+        this.nameLabel = null; // 头顶名称标签
         
         // 交互状态
         this.isInteracting = false;
@@ -109,56 +110,66 @@ export default class NPC {
         }
         
         // 创建头顶名称标签
-        this.createNameTag();
+        this.createNameLabel();
         
         return this.mesh;
     }
 
     /**
-     * 创建头顶名称标签
+     * 创建头顶名称标签（黄色大字，无背景）
      */
-    createNameTag() {
-        // 创建画布 - 增大尺寸
+    createNameLabel() {
+        // 创建画布来绘制文字
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
         canvas.width = 512;
         canvas.height = 128;
-        
-        // 绘制背景（半透明黑色）
-        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        context.roundRect(0, 0, canvas.width, canvas.height, 16);
-        context.fill();
-        
-        // 绘制边框
-        context.strokeStyle = 'rgba(255, 215, 0, 0.9)';
-        context.lineWidth = 4;
-        context.roundRect(0, 0, canvas.width, canvas.height, 16);
-        context.stroke();
-        
-        // 只绘制职业（title），增大字体
-        context.font = 'bold 48px Arial, sans-serif';
-        context.fillStyle = '#ffd700';
+
+        // 清除画布（透明背景）
+        context.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 绘制黄色文字（加大字号）
+        context.font = 'bold 64px Microsoft YaHei, PingFang SC, sans-serif';
+        context.fillStyle = '#FFD700'; // 金黄色
         context.textAlign = 'center';
         context.textBaseline = 'middle';
-        context.fillText(this.title, canvas.width / 2, canvas.height / 2);
-        
+
+        // 根据NPC id确定显示的职业名称
+        const displayNames = {
+            'villageChief': '村长',
+            'blacksmith': '铁匠',
+            'doctor': '郎中',
+            'guard': '守卫',
+            'trainer': '修炼老师'
+        };
+        const displayName = displayNames[this.id] || this.title;
+
+        // 添加文字描边增强可读性
+        context.strokeStyle = '#000000';
+        context.lineWidth = 4;
+        context.strokeText(displayName, canvas.width / 2, canvas.height / 2);
+        context.fillText(displayName, canvas.width / 2, canvas.height / 2);
+
         // 创建纹理
         const texture = new THREE.CanvasTexture(canvas);
         texture.minFilter = THREE.LinearFilter;
-        
-        // 创建精灵材质
-        const spriteMaterial = new THREE.SpriteMaterial({ 
+
+        // 创建平面显示文字
+        const labelGeometry = new THREE.PlaneGeometry(3, 0.75);
+        const labelMaterial = new THREE.MeshBasicMaterial({
             map: texture,
-            transparent: true
+            transparent: true,
+            opacity: 1,
+            side: THREE.DoubleSide
         });
-        
-        // 创建精灵 - 增大尺寸
-        this.nameTag = new THREE.Sprite(spriteMaterial);
-        this.nameTag.scale.set(5, 1.25, 1);
-        this.nameTag.position.set(0, 2.2 * this.size, 0);
-        
-        // 添加到mesh
-        this.mesh.add(this.nameTag);
+
+        this.nameLabel = new THREE.Mesh(labelGeometry, labelMaterial);
+        // 位置在NPC头顶上方
+        this.nameLabel.position.set(
+            this.position.x,
+            this.position.y + 1.6 * this.size + 1.0,
+            this.position.z
+        );
     }
 
     /**

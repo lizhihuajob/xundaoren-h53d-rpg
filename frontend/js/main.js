@@ -466,7 +466,7 @@ class Game {
         this.renderer.updateCamera(this.player.mesh.position);
         
         // 更新世界和获取怪物攻击
-        const monsterAttacks = this.world.update(deltaTime, this.player);
+        const monsterAttacks = this.world.update(deltaTime, this.player, this.renderer.camera);
         
         // 处理怪物攻击
         monsterAttacks.forEach(attack => {
