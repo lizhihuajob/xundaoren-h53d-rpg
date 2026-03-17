@@ -76,7 +76,7 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 中央广场（棋盘格样式）- 移动到医馆和铁匠铺前方
+        // 村庄广场（棋盘格样式）- 西南角
         const plazaWidth = 16;
         const plazaDepth = 12;
         const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaDepth);
@@ -85,7 +85,7 @@ export default class StarterVillage {
         });
         const plaza = new THREE.Mesh(plazaGeometry, plazaMaterial);
         plaza.rotation.x = -Math.PI / 2;
-        plaza.position.set(0, 0.01, 10);
+        plaza.position.set(-18, 0.01, -18);
         plaza.receiveShadow = true;
         this.scene.add(plaza);
 
@@ -106,9 +106,9 @@ export default class StarterVillage {
                 const cell = new THREE.Mesh(cellGeometry, cellMaterial);
                 cell.rotation.x = -Math.PI / 2;
                 cell.position.set(
-                    -plazaWidth / 2 + cellWidth * (col + 0.5),
+                    -18 - plazaWidth / 2 + cellWidth * (col + 0.5),
                     0.02,
-                    10 - plazaDepth / 2 + cellDepth * (row + 0.5)
+                    -18 - plazaDepth / 2 + cellDepth * (row + 0.5)
                 );
                 cell.receiveShadow = true;
                 this.scene.add(cell);
@@ -119,8 +119,8 @@ export default class StarterVillage {
         const borderWidth = 0.5;
         const borderDepth = plazaDepth + 1;
         const borderPositions = [
-            { x: -plazaWidth / 2 - borderWidth / 2, z: 10 },
-            { x: plazaWidth / 2 + borderWidth / 2, z: 10 }
+            { x: -18 - plazaWidth / 2 - borderWidth / 2, z: -18 },
+            { x: -18 + plazaWidth / 2 + borderWidth / 2, z: -18 }
         ];
         
         borderPositions.forEach(pos => {
@@ -142,7 +142,7 @@ export default class StarterVillage {
         });
         const training = new THREE.Mesh(trainingGeometry, trainingMaterial);
         training.rotation.x = -Math.PI / 2;
-        training.position.set(-18, 0.01, -18);
+        training.position.set(18, 0.01, 18);
         training.receiveShadow = true;
         this.scene.add(training);
     }
@@ -159,8 +159,8 @@ export default class StarterVillage {
         
         // 创建四面墙
         const wallConfigs = [
-            { w: this.width, h: wallThickness, x: 0, z: -this.height/2 - wallThickness/2 }, // 北
-            { w: this.width, h: wallThickness, x: 0, z: this.height/2 + wallThickness/2 },  // 南
+            { w: this.width, h: wallThickness, x: 0, z: -this.height/2 - wallThickness/2 }, // 南
+            { w: this.width, h: wallThickness, x: 0, z: this.height/2 + wallThickness/2 },  // 北
             { w: wallThickness, h: this.height, x: -this.width/2 - wallThickness/2, z: 0 }, // 西
             { w: wallThickness, h: this.height, x: this.width/2 + wallThickness/2, z: 0 }   // 东
         ];
@@ -187,7 +187,7 @@ export default class StarterVillage {
         this.createMedicalHall();
 
         // 创建修炼台
-        const trainingConfig = { name: '修炼台', x: 15, z: 10, w: 4, h: 2, d: 4, color: 0x4169e1 };
+        const trainingConfig = { name: '修炼台', x: -6, z: -10, w: 4, h: 2, d: 4, color: 0x4169e1 };
         const trainingGeometry = new THREE.BoxGeometry(trainingConfig.w, trainingConfig.h, trainingConfig.d);
         const trainingMaterial = new THREE.MeshLambertMaterial({
             color: trainingConfig.color
@@ -208,7 +208,7 @@ export default class StarterVillage {
      * 创建医馆
      */
     createMedicalHall() {
-        const config = { name: '医馆', x: -15, z: 15, w: 3, h: 2, d: 2.5, color: 0xf5f5dc };
+        const config = { name: '医馆', x: -14, z: -10, w: 3, h: 2, d: 2.5, color: 0xf5f5dc };
 
         // 创建房屋主体
         const bodyGeometry = new THREE.BoxGeometry(config.w, config.h, config.d);
@@ -232,36 +232,36 @@ export default class StarterVillage {
         roof.castShadow = true;
         roof.receiveShadow = true;
 
-        // 创建医馆的门（右边）
-        const doorGeometry = new THREE.BoxGeometry(0.1, 1.25, 0.75);
+        // 创建医馆的门（朝南）
+        const doorGeometry = new THREE.BoxGeometry(0.75, 1.25, 0.1);
         const doorMaterial = new THREE.MeshLambertMaterial({
             color: 0x8b4513
         });
         const door = new THREE.Mesh(doorGeometry, doorMaterial);
-        door.position.set(config.w / 2 + 0.05, 0.625, 0);
+        door.position.set(0, 0.625, -config.d / 2 - 0.05);
         door.castShadow = true;
         door.receiveShadow = true;
 
         // 创建医馆招牌（红十字）
-        const signBoardGeometry = new THREE.BoxGeometry(0.1, 0.4, 1);
+        const signBoardGeometry = new THREE.BoxGeometry(1, 0.4, 0.1);
         const signBoardMaterial = new THREE.MeshLambertMaterial({
             color: 0xffffff
         });
         const signBoard = new THREE.Mesh(signBoardGeometry, signBoardMaterial);
-        signBoard.position.set(config.w / 2 + 0.1, config.h + 0.5, 0);
+        signBoard.position.set(0, config.h + 0.5, -config.d / 2 - 0.1);
 
         // 红色十字 - 竖条
-        const crossVGeometry = new THREE.BoxGeometry(0.025, 0.3, 0.15);
+        const crossVGeometry = new THREE.BoxGeometry(0.15, 0.3, 0.025);
         const crossMaterial = new THREE.MeshLambertMaterial({
             color: 0xff0000
         });
         const crossV = new THREE.Mesh(crossVGeometry, crossMaterial);
-        crossV.position.set(config.w / 2 + 0.175, config.h + 0.5, 0);
+        crossV.position.set(0, config.h + 0.5, -config.d / 2 - 0.175);
 
         // 红色十字 - 横条
-        const crossHGeometry = new THREE.BoxGeometry(0.025, 0.15, 0.3);
+        const crossHGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.025);
         const crossH = new THREE.Mesh(crossHGeometry, crossMaterial);
-        crossH.position.set(config.w / 2 + 0.175, config.h + 0.5, 0);
+        crossH.position.set(0, config.h + 0.5, -config.d / 2 - 0.175);
 
         // 创建药罐装饰
         const jarGeometry = new THREE.CylinderGeometry(0.15, 0.2, 0.4, 8);
@@ -269,11 +269,11 @@ export default class StarterVillage {
             color: 0x8b4513
         });
         const jar1 = new THREE.Mesh(jarGeometry, jarMaterial);
-        jar1.position.set(config.w / 2 + 0.25, 0.2, -1);
+        jar1.position.set(-1, 0.2, -config.d / 2 - 0.25);
         jar1.castShadow = true;
 
         const jar2 = new THREE.Mesh(jarGeometry, jarMaterial);
-        jar2.position.set(config.w / 2 + 0.25, 0.2, 1);
+        jar2.position.set(1, 0.2, -config.d / 2 - 0.25);
         jar2.castShadow = true;
 
         // 将所有部分组合成一个组
@@ -301,7 +301,7 @@ export default class StarterVillage {
      * 创建铁匠铺（带三角形房顶）
      */
     createBlacksmithBuilding() {
-        const config = { name: '铁匠铺', x: -15, z: 5, w: 2.5, h: 1.75, d: 2.5, color: 0x654321 };
+        const config = { name: '铁匠铺', x: -22, z: -10, w: 2.5, h: 1.75, d: 2.5, color: 0x654321 };
 
         // 创建房屋主体
         const bodyGeometry = new THREE.BoxGeometry(config.w, config.h, config.d);
@@ -338,13 +338,13 @@ export default class StarterVillage {
         chimney.castShadow = true;
         chimney.receiveShadow = true;
 
-        // 创建铁匠铺的门（右边）
-        const doorGeometry = new THREE.BoxGeometry(0.1, 1, 0.6);
+        // 创建铁匠铺的门（朝南）
+        const doorGeometry = new THREE.BoxGeometry(0.6, 1, 0.1);
         const doorMaterial = new THREE.MeshLambertMaterial({
             color: 0x3d2817 // 深棕色门
         });
         const door = new THREE.Mesh(doorGeometry, doorMaterial);
-        door.position.set(config.w / 2 + 0.05, 0.5, 0);
+        door.position.set(0, 0.5, -config.d / 2 - 0.05);
         door.castShadow = true;
         door.receiveShadow = true;
 
@@ -354,7 +354,7 @@ export default class StarterVillage {
             color: 0xffd700 // 金色把手
         });
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
-        handle.position.set(config.w / 2 + 0.125, 0.5, 0.2);
+        handle.position.set(0.2, 0.5, -config.d / 2 - 0.125);
 
         // 将所有部分组合成一个组
         const buildingGroup = new THREE.Group();
@@ -425,7 +425,7 @@ export default class StarterVillage {
 
         // 岩石
         const rockPositions = [
-            { x: -22, z: -10, s: 1 },
+            { x: -25, z: -15, s: 1 },
             { x: 20, z: 15, s: 0.8 },
             { x: 5, z: -20, s: 1.2 }
         ];
