@@ -76,8 +76,10 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 中央广场（浅色石板）- 移动到医馆和铁匠铺前方
-        const plazaGeometry = new THREE.CircleGeometry(8, 32);
+        // 中央广场（长方形浅色石板）- 移动到医馆和铁匠铺前方
+        const plazaWidth = 16;
+        const plazaDepth = 12;
+        const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaDepth);
         const plazaMaterial = new THREE.MeshLambertMaterial({
             color: 0x808080
         });
@@ -86,6 +88,60 @@ export default class StarterVillage {
         plaza.position.set(0, 0.01, 10);
         plaza.receiveShadow = true;
         this.scene.add(plaza);
+        
+        // 添加广场纹路
+        const lineMaterial = new THREE.MeshLambertMaterial({ color: 0x606060 });
+        
+        // 横向纹路
+        for (let i = -6; i <= 6; i += 2) {
+            const lineGeom = new THREE.BoxGeometry(plazaWidth, 0.02, 0.1);
+            const line = new THREE.Mesh(lineGeom, lineMaterial);
+            line.position.set(0, 0.015, 10 + i);
+            line.receiveShadow = true;
+            this.scene.add(line);
+        }
+        
+        // 纵向纹路
+        for (let i = -7; i <= 7; i += 2) {
+            const lineGeom = new THREE.BoxGeometry(0.1, 0.02, plazaDepth);
+            const line = new THREE.Mesh(lineGeom, lineMaterial);
+            line.position.set(i, 0.015, 10);
+            line.receiveShadow = true;
+            this.scene.add(line);
+        }
+        
+        // 广场边缘装饰
+        const borderMaterial = new THREE.MeshLambertMaterial({ color: 0x505050 });
+        const borderThickness = 0.3;
+        const borderHeight = 0.05;
+        
+        const borderTop = new THREE.Mesh(
+            new THREE.BoxGeometry(plazaWidth + borderThickness, borderHeight, borderThickness),
+            borderMaterial
+        );
+        borderTop.position.set(0, 0.02, 10 + plazaDepth / 2);
+        this.scene.add(borderTop);
+        
+        const borderBottom = new THREE.Mesh(
+            new THREE.BoxGeometry(plazaWidth + borderThickness, borderHeight, borderThickness),
+            borderMaterial
+        );
+        borderBottom.position.set(0, 0.02, 10 - plazaDepth / 2);
+        this.scene.add(borderBottom);
+        
+        const borderLeft = new THREE.Mesh(
+            new THREE.BoxGeometry(borderThickness, borderHeight, plazaDepth),
+            borderMaterial
+        );
+        borderLeft.position.set(-plazaWidth / 2, 0.02, 10);
+        this.scene.add(borderLeft);
+        
+        const borderRight = new THREE.Mesh(
+            new THREE.BoxGeometry(borderThickness, borderHeight, plazaDepth),
+            borderMaterial
+        );
+        borderRight.position.set(plazaWidth / 2, 0.02, 10);
+        this.scene.add(borderRight);
         
         // 练功区（略微深色）
         const trainingGeometry = new THREE.PlaneGeometry(15, 15);
