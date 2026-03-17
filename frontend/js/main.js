@@ -799,6 +799,10 @@ class Game {
                 this.ui.hideDialog();
                 this.ui.showToast('战斗教程：用1-4键释放技能，点击怪物攻击', 'info');
                 this.player.tutorialComplete = true;
+                // 切换守卫对话到完成状态
+                if (this.currentNPC && this.currentNPC.id === 'guard') {
+                    this.currentNPC.setDialog('afterTutorial');
+                }
                 break;
 
             case 'learnDragonGrip':
@@ -819,8 +823,8 @@ class Game {
                 this.player.foundMysteriousElder = true;
                 this.ui.showToast('神秘老者赠予你100金币！', 'success');
                 this.currentNPC.setDialog('afterGift');
-                const dialog = this.currentNPC.getDialog('afterGift', this.player);
-                this.ui.showDialog(this.currentNPC, dialog);
+                const afterGiftDialog = this.currentNPC.getDialog('afterGift', this.player);
+                this.ui.showDialog(this.currentNPC, afterGiftDialog);
                 break;
                 
             default:
@@ -845,9 +849,9 @@ class Game {
 
         // 学习新职业技能
         const newSkills = this.getClassSkillIds(classId);
-        newSkills.forEach(id => {
-            if (!this.player.learnedSkills.includes(id)) {
-                this.player.learnedSkills.push(id);
+        newSkills.forEach(skillId => {
+            if (!this.player.learnedSkills.includes(skillId)) {
+                this.player.learnedSkills.push(skillId);
             }
         });
 

@@ -398,17 +398,16 @@ export default class CombatSystem {
         
         // 播放怪物攻击特效
         if (this.effects) {
-            this.effects.playMonsterWindup(attackData.target); // 实际上攻击已经发生了，这里演示用
             if (damage > 0) {
                 this.effects.playHitEffect(this.player);
-                this.effects.playGenericHit(this.player.position);
+                this.effects.createGenericHit(this.player.position);
             }
         }
         
         return {
             type: 'damage',
             source: 'monster',
-            attacker: attackData.target,
+            attacker: attackData.attacker,
             damage: damage,
             playerHp: this.player.hp,
             playerMaxHp: this.player.maxHp

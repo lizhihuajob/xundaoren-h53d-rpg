@@ -611,13 +611,20 @@ export default class Player {
             hp: this.hp,
             mp: this.mp,
             position: { ...this.position },
+            rotation: this.rotation,
             inventory: [...this.inventory],
             equipment: { ...this.equipment },
             learnedSkills: [...this.learnedSkills],
+            skillCooldowns: { ...this.skillCooldowns },
             quests: [...this.quests],
             completedQuests: [...this.completedQuests],
             tutorialComplete: this.tutorialComplete,
-            foundMysteriousElder: this.foundMysteriousElder
+            foundMysteriousElder: this.foundMysteriousElder,
+            baseHp: this.baseHp,
+            baseMp: this.baseMp,
+            baseAttack: this.baseAttack,
+            baseDefense: this.baseDefense,
+            baseSpeed: this.baseSpeed
         };
     }
 

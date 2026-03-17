@@ -5,7 +5,7 @@
 
 import { getRealmByLevel, getExpRequired } from '../data/realms.js';
 import { getClass, getAllClasses } from '../data/classes.js';
-import { getBaseSkills, getClassSkills } from '../data/skills.js';
+import { getBaseSkills, getClassSkills, getSkill } from '../data/skills.js';
 import { getItem, ITEMS } from '../data/items.js';
 
 export default class UIManager {
@@ -38,7 +38,7 @@ export default class UIManager {
         this.elements.loadingText = document.getElementById('loading-text');
         
         // 角色创建
-        this.elements.characterNameInput = document.getElementById('character-name-input');
+        this.elements.characterNameInput = document.getElementById('char-name');
         
         // HUD元素
         this.elements.playerName = document.getElementById('player-name');
@@ -75,8 +75,8 @@ export default class UIManager {
         this.elements.dialogOptions = document.getElementById('dialog-options');
         
         // 设置
-        this.elements.qualitySelect = document.getElementById('quality-select');
-        this.elements.damageNumbersCheck = document.getElementById('damage-numbers-check');
+        this.elements.qualitySelect = document.getElementById('setting-quality');
+        this.elements.damageNumbersCheck = document.getElementById('setting-damage');
         
         // Toast
         this.elements.toastContainer = document.getElementById('toast-container');

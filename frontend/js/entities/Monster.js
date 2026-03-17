@@ -207,7 +207,7 @@ export default class Monster {
         const now = Date.now();
         if (now - this.lastAttackTime >= this.attackCooldown) {
             this.lastAttackTime = now;
-            return { type: 'attack', target: player, damage: this.attack };
+            return { type: 'attack', attacker: this, target: player, damage: this.attack };
         }
         
         return null;
