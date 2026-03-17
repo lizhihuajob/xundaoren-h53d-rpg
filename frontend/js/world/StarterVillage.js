@@ -5,7 +5,7 @@
 
 import NPC from '../entities/NPC.js';
 import Monster from '../entities/Monster.js';
-import { getAllNPCs, getVisibleNPCs } from '../data/npcs.js';
+import { getVisibleNPCs } from '../data/npcs.js';
 
 export default class StarterVillage {
     constructor() {
@@ -26,6 +26,9 @@ export default class StarterVillage {
         this.npcs = [];
         this.monsters = [];
         this.decorations = []; // 装饰物（树、岩石等）
+        
+        // 篱笆
+        this.fences = [];
         
         // 怪物生成点
         this.monsterSpawns = [
@@ -52,6 +55,7 @@ export default class StarterVillage {
         
         this.createGround();
         this.createWalls();
+        this.createFences();
         this.createBuildings();
         this.createNPCs();
         this.createMonsters();
@@ -179,6 +183,237 @@ export default class StarterVillage {
     }
 
     /**
+     * 创建村庄篱笆
+     * 围绕村庄区域（广场和建筑区），东面设置大门
+     */
+    createFences() {
+        // 篱笆材质
+        const fenceMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+        const postMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        
+        // 村庄区域定义（基于广场、建筑和修炼台位置）
+        // 广场中心 (-18, 18)，尺寸 16x12
+        // 修炼台在 (-6, 12)，需要包围在篱笆内
+        // 建筑在广场北侧
+        const villageMinX = -28;  // 西侧
+        const villageMaxX = -2;   // 东侧（大门位置），扩展到修炼台东侧
+        const villageMinZ = 8;    // 北侧
+        const villageMaxZ = 28;   // 南侧
+        
+        // 确保篱笆不超出地图边界（地图范围 -25 到 25）
+        const mapMinX = -24;
+        const mapMaxX = 24;
+        const mapMinZ = -24;
+        const mapMaxZ = 24;
+        
+        // 限制篱笆范围在地图内
+        const fenceMinX = Math.max(villageMinX, mapMinX);
+        const fenceMaxX = Math.min(villageMaxX, mapMaxX);
+        const fenceMinZ = Math.max(villageMinZ, mapMinZ);
+        const fenceMaxZ = Math.min(villageMaxZ, mapMaxZ);
+        
+        const fenceHeight = 1.2;
+        const fenceThickness = 0.15;
+        const postSize = 0.25;
+        const postHeight = 1.4;
+        const segmentLength = 2; // 每个篱笆段的长度
+        
+        // 大门设置在东面（X轴正方向）
+        const gateWidth = 4;
+        const gateCenterZ = 18; // 大门中心Z坐标（广场中心）
+        const gateZStart = gateCenterZ - gateWidth / 2;
+        const gateZEnd = gateCenterZ + gateWidth / 2;
+        
+        // 创建篱笆段的辅助函数
+        const createFenceSegment = (x, z, width, depth, rotationY = 0) => {
+            const segment = new THREE.Group();
+            
+            // 横栏（上下两根）
+            const railHeight1 = fenceHeight * 0.75;
+            const railHeight2 = fenceHeight * 0.25;
+            
+            const railGeometry1 = new THREE.BoxGeometry(width || fenceThickness, fenceThickness, depth || fenceThickness);
+            const rail1 = new THREE.Mesh(railGeometry1, fenceMaterial);
+            rail1.position.set(0, railHeight1, 0);
+            rail1.castShadow = true;
+            segment.add(rail1);
+            
+            const rail2 = new THREE.Mesh(railGeometry1, fenceMaterial);
+            rail2.position.set(0, railHeight2, 0);
+            rail2.castShadow = true;
+            segment.add(rail2);
+            
+            // 竖条
+            const numBars = Math.floor((width || depth) / 0.3);
+            const barGeometry = new THREE.BoxGeometry(fenceThickness, fenceHeight, fenceThickness);
+            for (let i = 1; i < numBars; i++) {
+                const bar = new THREE.Mesh(barGeometry, fenceMaterial);
+                const offset = (i / numBars - 0.5) * (width || depth);
+                if (width > depth) {
+                    bar.position.set(offset, fenceHeight / 2, 0);
+                } else {
+                    bar.position.set(0, fenceHeight / 2, offset);
+                }
+                bar.castShadow = true;
+                segment.add(bar);
+            }
+            
+            // 立柱
+            const postGeometry = new THREE.BoxGeometry(postSize, postHeight, postSize);
+            const post = new THREE.Mesh(postGeometry, postMaterial);
+            post.position.set(0, postHeight / 2, 0);
+            post.castShadow = true;
+            segment.add(post);
+            
+            segment.position.set(x, 0, z);
+            if (rotationY !== 0) {
+                segment.rotation.y = rotationY;
+            }
+            
+            this.scene.add(segment);
+            this.fences.push(segment);
+        };
+        
+        // 北面篱笆（Z = fenceMinZ）
+        const northLength = fenceMaxX - fenceMinX;
+        const northSegments = Math.ceil(northLength / segmentLength);
+        for (let i = 0; i <= northSegments; i++) {
+            const x = fenceMinX + (i * northLength / northSegments);
+            createFenceSegment(x, fenceMinZ, segmentLength, fenceThickness);
+        }
+        
+        // 南面篱笆（Z = fenceMaxZ）
+        for (let i = 0; i <= northSegments; i++) {
+            const x = fenceMinX + (i * northLength / northSegments);
+            createFenceSegment(x, fenceMaxZ, segmentLength, fenceThickness);
+        }
+        
+        // 西面篱笆（X = fenceMinX）
+        const westLength = fenceMaxZ - fenceMinZ;
+        const westSegments = Math.ceil(westLength / segmentLength);
+        for (let i = 0; i <= westSegments; i++) {
+            const z = fenceMinZ + (i * westLength / westSegments);
+            createFenceSegment(fenceMinX, z, fenceThickness, segmentLength);
+        }
+        
+        // 东面篱笆（X = fenceMaxX），中间留大门
+        // 大门北侧的篱笆
+        const eastNorthStart = fenceMinZ;
+        const eastNorthEnd = Math.max(gateZStart, fenceMinZ);
+        const eastNorthLength = eastNorthEnd - eastNorthStart;
+        if (eastNorthLength > 0) {
+            const eastNorthSegments = Math.ceil(eastNorthLength / segmentLength);
+            for (let i = 0; i <= eastNorthSegments; i++) {
+                const z = eastNorthStart + (i * eastNorthLength / eastNorthSegments);
+                if (z <= eastNorthEnd - 0.1) {
+                    createFenceSegment(fenceMaxX, z, fenceThickness, segmentLength);
+                }
+            }
+        }
+        
+        // 大门南侧的篱笆
+        const eastSouthStart = Math.min(gateZEnd, fenceMaxZ);
+        const eastSouthEnd = fenceMaxZ;
+        const eastSouthLength = eastSouthEnd - eastSouthStart;
+        if (eastSouthLength > 0) {
+            const eastSouthSegments = Math.ceil(eastSouthLength / segmentLength);
+            for (let i = 0; i <= eastSouthSegments; i++) {
+                const z = eastSouthStart + (i * eastSouthLength / eastSouthSegments);
+                if (z >= eastSouthStart + 0.1) {
+                    createFenceSegment(fenceMaxX, z, fenceThickness, segmentLength);
+                }
+            }
+        }
+        
+        // 创建大门
+        this.createVillageGate(fenceMaxX, gateCenterZ, gateWidth);
+        
+        console.log('村庄篱笆创建完成');
+    }
+
+    /**
+     * 创建村庄大门
+     */
+    createVillageGate(x, z, width) {
+        const gateHeight = 2.5;
+        const postWidth = 0.6;
+        const postDepth = 0.6;
+        
+        // 门柱材质
+        const postMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+        const beamMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+        
+        // 创建门柱组
+        const gateGroup = new THREE.Group();
+        gateGroup.position.set(x, 0, z);
+        
+        // 左门柱
+        const leftPostGeometry = new THREE.BoxGeometry(postWidth, gateHeight, postDepth);
+        const leftPost = new THREE.Mesh(leftPostGeometry, postMaterial);
+        leftPost.position.set(0, gateHeight / 2, -width / 2 + postDepth / 2);
+        leftPost.castShadow = true;
+        gateGroup.add(leftPost);
+        
+        // 右门柱
+        const rightPost = new THREE.Mesh(leftPostGeometry, postMaterial);
+        rightPost.position.set(0, gateHeight / 2, width / 2 - postDepth / 2);
+        rightPost.castShadow = true;
+        gateGroup.add(rightPost);
+        
+        // 门楣横梁
+        const beamGeometry = new THREE.BoxGeometry(postWidth, postWidth, width);
+        const beam = new THREE.Mesh(beamGeometry, beamMaterial);
+        beam.position.set(0, gateHeight - postWidth / 2, 0);
+        beam.castShadow = true;
+        gateGroup.add(beam);
+        
+        // 门楣上的牌匾
+        const signGeometry = new THREE.BoxGeometry(0.2, 0.8, 2);
+        const signMaterial = new THREE.MeshLambertMaterial({ color: 0x8b0000 });
+        const sign = new THREE.Mesh(signGeometry, signMaterial);
+        sign.position.set(0, gateHeight - 0.5, 0);
+        gateGroup.add(sign);
+        
+        // 创建文字纹理
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 128;
+        context.fillStyle = '#8b0000';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.font = 'bold 48px Microsoft YaHei, sans-serif';
+        context.fillStyle = '#FFD700';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText('新手村', canvas.width / 2, canvas.height / 2);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        const signFaceGeometry = new THREE.PlaneGeometry(1.5, 0.6);
+        const signFaceMaterial = new THREE.MeshBasicMaterial({ 
+            map: texture, 
+            transparent: true 
+        });
+        
+        // 牌匾正面
+        const signFront = new THREE.Mesh(signFaceGeometry, signFaceMaterial);
+        signFront.position.set(postWidth / 2 + 0.11, gateHeight - 0.5, 0);
+        signFront.rotation.y = Math.PI / 2;
+        gateGroup.add(signFront);
+        
+        // 牌匾背面
+        const signBack = new THREE.Mesh(signFaceGeometry, signFaceMaterial);
+        signBack.position.set(-postWidth / 2 - 0.11, gateHeight - 0.5, 0);
+        signBack.rotation.y = -Math.PI / 2;
+        gateGroup.add(signBack);
+        
+        this.scene.add(gateGroup);
+        this.fences.push(gateGroup);
+        
+        // 保存大门位置供守卫使用
+        this.gatePosition = { x: x + 1, y: 0, z: z };
+    }
+
+    /**
      * 创建建筑物（简单立方体）
      */
     createBuildings() {
@@ -188,19 +423,8 @@ export default class StarterVillage {
         // 创建医馆
         this.createMedicalHall();
 
-        // 创建修炼台 - 移动到医馆和铁匠铺附近并排
-        const trainingConfig = { name: '修炼台', x: -6, z: 12, w: 4, h: 2, d: 4, color: 0x4169e1 };
-        const trainingGeometry = new THREE.BoxGeometry(trainingConfig.w, trainingConfig.h, trainingConfig.d);
-        const trainingMaterial = new THREE.MeshLambertMaterial({
-            color: trainingConfig.color
-        });
-        const trainingBuilding = new THREE.Mesh(trainingGeometry, trainingMaterial);
-        trainingBuilding.position.set(trainingConfig.x, trainingConfig.h / 2, trainingConfig.z);
-        trainingBuilding.castShadow = true;
-        trainingBuilding.receiveShadow = true;
-        trainingBuilding.userData = { type: 'building', entity: { name: trainingConfig.name } };
-        this.scene.add(trainingBuilding);
-        this.buildings.push(trainingBuilding);
+        // 创建修炼台 - 五边形带台阶
+        this.createTrainingPlatform();
 
         // 添加一些装饰性的小物件
         this.createDecorations();
@@ -376,6 +600,103 @@ export default class StarterVillage {
 
         this.scene.add(buildingGroup);
         this.buildings.push(buildingGroup);
+    }
+
+    /**
+     * 创建修炼台 - 多层五边形叠加
+     */
+    createTrainingPlatform() {
+        const config = { name: '修炼台', x: -6, z: 12 };
+        
+        // 创建修炼台组
+        const platformGroup = new THREE.Group();
+        platformGroup.position.set(config.x, 0, config.z);
+        
+        // 定义多层五边形参数（从下到上，由大到小）
+        const layers = [
+            { radius: 3.0, height: 0.4, color: 0x2e4a8f, y: 0.2 },    // 最底层 - 深蓝
+            { radius: 2.5, height: 0.4, color: 0x3d5aa0, y: 0.6 },    // 第二层
+            { radius: 2.0, height: 0.4, color: 0x4c6ab1, y: 1.0 },    // 第三层
+            { radius: 1.5, height: 0.4, color: 0x5b7ac2, y: 1.4 },    // 第四层
+            { radius: 1.0, height: 0.3, color: 0x6a8ad3, y: 1.75 },   // 第五层 - 浅蓝
+            { radius: 0.6, height: 0.2, color: 0x87ceeb, y: 2.0 }     // 顶层 - 天蓝
+        ];
+        
+        let totalHeight = 0;
+        
+        // 创建每一层五边形
+        layers.forEach((layer, index) => {
+            // 五边形柱体
+            const geometry = new THREE.CylinderGeometry(layer.radius, layer.radius, layer.height, 5);
+            const material = new THREE.MeshLambertMaterial({
+                color: layer.color
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(0, layer.y, 0);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            platformGroup.add(mesh);
+            
+            totalHeight = layer.y + layer.height / 2;
+            
+            // 每层顶部的发光装饰环
+            const ringGeometry = new THREE.RingGeometry(layer.radius - 0.05, layer.radius + 0.02, 5);
+            const ringMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.3 - index * 0.04
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            ring.rotation.x = -Math.PI / 2;
+            ring.position.set(0, layer.y + layer.height / 2 + 0.01, 0);
+            platformGroup.add(ring);
+        });
+        
+        // 最顶层的五芒星图案
+        const starGeometry = new THREE.RingGeometry(0.3, 0.4, 5);
+        const starMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.8
+        });
+        const star = new THREE.Mesh(starGeometry, starMaterial);
+        star.rotation.x = -Math.PI / 2;
+        star.rotation.z = Math.PI / 10;
+        star.position.set(0, totalHeight + 0.02, 0);
+        platformGroup.add(star);
+        
+        // 顶部灵气光球
+        const orbGeometry = new THREE.SphereGeometry(0.15, 16, 16);
+        const orbMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.6
+        });
+        const orb = new THREE.Mesh(orbGeometry, orbMaterial);
+        orb.position.set(0, totalHeight + 0.3, 0);
+        platformGroup.add(orb);
+        
+        // 设置userData用于交互检测
+        platformGroup.userData = {
+            type: 'building',
+            entity: { name: config.name },
+            isTrainingPlatform: true,
+            platformHeight: totalHeight
+        };
+        
+        this.scene.add(platformGroup);
+        this.buildings.push(platformGroup);
+        
+        // 保存修炼台信息供碰撞检测使用
+        this.trainingPlatform = {
+            position: { x: config.x, y: 0, z: config.z },
+            radius: layers[0].radius,
+            height: totalHeight
+        };
+        
+        console.log('修炼台创建完成（多层五边形叠加）');
     }
 
     /**

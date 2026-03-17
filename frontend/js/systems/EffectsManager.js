@@ -600,9 +600,27 @@ export default class EffectsManager {
     playHitEffect(target) {
         if (!target.mesh) return;
         
-        const originalColor = target.mesh.material.color.getHex();
-        target.mesh.material.color.setHex(0xff0000);
-        target.mesh.material.emissive?.setHex(0xff0000);
+        // 获取所有子网格（用于Group类型的mesh，如玩家）
+        const meshes = target.mesh.children && target.mesh.children.length > 0 
+            ? target.mesh.children.filter(c => c.isMesh)
+            : [target.mesh];
+        
+        if (meshes.length === 0) return;
+        
+        // 保存原始颜色
+        const originalColors = meshes.map(m => ({
+            mesh: m,
+            color: m.material.color.getHex(),
+            emissive: m.material.emissive ? m.material.emissive.getHex() : null
+        }));
+        
+        // 设置红色闪烁
+        originalColors.forEach(item => {
+            item.mesh.material.color.setHex(0xff0000);
+            if (item.mesh.material.emissive) {
+                item.mesh.material.emissive.setHex(0xff0000);
+            }
+        });
         
         // 震动效果
         const originalPos = target.mesh.position.clone();
@@ -616,10 +634,13 @@ export default class EffectsManager {
         setTimeout(() => {
             clearInterval(shakeInterval);
             target.mesh.position.copy(originalPos);
-            target.mesh.material.color.setHex(originalColor);
-            if (target.mesh.material.emissive) {
-                target.mesh.material.emissive.setHex(0x000000);
-            }
+            // 恢复原始颜色
+            originalColors.forEach(item => {
+                item.mesh.material.color.setHex(item.color);
+                if (item.mesh.material.emissive && item.emissive !== null) {
+                    item.mesh.material.emissive.setHex(item.emissive);
+                }
+            });
         }, 200);
     }
 

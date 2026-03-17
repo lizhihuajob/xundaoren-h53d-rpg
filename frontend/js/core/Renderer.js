@@ -157,7 +157,12 @@ class Renderer {
      * 世界坐标转屏幕坐标
      */
     worldToScreen(worldPosition) {
-        const vector = worldPosition.clone();
+        // 支持普通对象 {x, y, z} 和 Three.js Vector3
+        const vector = new THREE.Vector3(
+            worldPosition.x,
+            worldPosition.y,
+            worldPosition.z
+        );
         vector.project(this.camera);
 
         return {
