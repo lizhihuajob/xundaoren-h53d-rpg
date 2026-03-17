@@ -76,8 +76,10 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 中央广场（浅色石板）- 移动到医馆和铁匠铺前方
-        const plazaGeometry = new THREE.CircleGeometry(8, 32);
+        // 中央广场（长方形石板）- 移动到医馆和铁匠铺前方
+        const plazaWidth = 16;
+        const plazaDepth = 12;
+        const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaDepth);
         const plazaMaterial = new THREE.MeshLambertMaterial({
             color: 0x808080
         });
@@ -86,6 +88,62 @@ export default class StarterVillage {
         plaza.position.set(0, 0.01, 10);
         plaza.receiveShadow = true;
         this.scene.add(plaza);
+
+        // 广场纹路 - 横向条纹
+        const stripeCount = 6;
+        const stripeWidth = plazaWidth;
+        const stripeDepth = 0.3;
+        const stripeSpacing = plazaDepth / stripeCount;
+        
+        for (let i = 0; i < stripeCount; i++) {
+            const stripeGeometry = new THREE.PlaneGeometry(stripeWidth, stripeDepth);
+            const stripeMaterial = new THREE.MeshLambertMaterial({
+                color: 0x606060
+            });
+            const stripe = new THREE.Mesh(stripeGeometry, stripeMaterial);
+            stripe.rotation.x = -Math.PI / 2;
+            stripe.position.set(0, 0.02, 10 - plazaDepth / 2 + stripeSpacing * (i + 0.5));
+            stripe.receiveShadow = true;
+            this.scene.add(stripe);
+        }
+
+        // 广场纹路 - 纵向装饰线
+        const verticalLineCount = 4;
+        const verticalLineWidth = 0.2;
+        const verticalLineDepth = plazaDepth;
+        const verticalSpacing = plazaWidth / verticalLineCount;
+        
+        for (let i = 1; i < verticalLineCount; i++) {
+            const lineGeometry = new THREE.PlaneGeometry(verticalLineWidth, verticalLineDepth);
+            const lineMaterial = new THREE.MeshLambertMaterial({
+                color: 0x505050
+            });
+            const line = new THREE.Mesh(lineGeometry, lineMaterial);
+            line.rotation.x = -Math.PI / 2;
+            line.position.set(-plazaWidth / 2 + verticalSpacing * i, 0.015, 10);
+            line.receiveShadow = true;
+            this.scene.add(line);
+        }
+
+        // 广场边缘装饰
+        const borderWidth = 0.5;
+        const borderDepth = plazaDepth + 1;
+        const borderPositions = [
+            { x: -plazaWidth / 2 - borderWidth / 2, z: 10 },
+            { x: plazaWidth / 2 + borderWidth / 2, z: 10 }
+        ];
+        
+        borderPositions.forEach(pos => {
+            const borderGeometry = new THREE.PlaneGeometry(borderWidth, borderDepth);
+            const borderMaterial = new THREE.MeshLambertMaterial({
+                color: 0x4a4a4a
+            });
+            const border = new THREE.Mesh(borderGeometry, borderMaterial);
+            border.rotation.x = -Math.PI / 2;
+            border.position.set(pos.x, 0.015, pos.z);
+            border.receiveShadow = true;
+            this.scene.add(border);
+        });
         
         // 练功区（略微深色）
         const trainingGeometry = new THREE.PlaneGeometry(15, 15);

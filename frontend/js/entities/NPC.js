@@ -38,31 +38,64 @@ export default class NPC {
      * 创建3D模型
      */
     createMesh() {
-        // 创建圆柱体
-        const geometry = new THREE.CylinderGeometry(
-            0.4 * this.size, 
-            0.4 * this.size, 
-            1.6 * this.size, 
-            16
-        );
-        const material = new THREE.MeshLambertMaterial({ 
+        // 创建NPC组
+        this.mesh = new THREE.Group();
+        this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+        this.mesh.userData = { type: 'npc', entity: this };
+
+        // 材质
+        const bodyMaterial = new THREE.MeshLambertMaterial({ 
             color: this.color,
             emissive: new THREE.Color(this.color).multiplyScalar(0.3)
         });
-        
-        this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.position.set(
-            this.position.x, 
-            this.position.y + 0.8 * this.size, 
-            this.position.z
-        );
-        this.mesh.castShadow = true;
-        this.mesh.receiveShadow = true;
-        this.mesh.userData = { type: 'npc', entity: this };
+        const skinMaterial = new THREE.MeshLambertMaterial({ color: 0xffccaa });
+        const darkMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+
+        const s = this.size;
+
+        // 1. 躯干
+        const torsoGeometry = new THREE.BoxGeometry(0.4 * s, 0.6 * s, 0.25 * s);
+        const torso = new THREE.Mesh(torsoGeometry, bodyMaterial);
+        torso.position.set(0, 1.0 * s, 0);
+        torso.castShadow = true;
+        this.mesh.add(torso);
+
+        // 2. 头部
+        const headGeometry = new THREE.BoxGeometry(0.3 * s, 0.3 * s, 0.3 * s);
+        const head = new THREE.Mesh(headGeometry, skinMaterial);
+        head.position.set(0, 1.5 * s, 0);
+        head.castShadow = true;
+        this.mesh.add(head);
+
+        // 3. 左臂
+        const armGeometry = new THREE.BoxGeometry(0.1 * s, 0.5 * s, 0.1 * s);
+        const leftArm = new THREE.Mesh(armGeometry, skinMaterial);
+        leftArm.position.set(-0.28 * s, 1.0 * s, 0);
+        leftArm.castShadow = true;
+        this.mesh.add(leftArm);
+
+        // 4. 右臂
+        const rightArm = new THREE.Mesh(armGeometry, skinMaterial);
+        rightArm.position.set(0.28 * s, 1.0 * s, 0);
+        rightArm.castShadow = true;
+        this.mesh.add(rightArm);
+
+        // 5. 左腿
+        const legGeometry = new THREE.BoxGeometry(0.12 * s, 0.6 * s, 0.12 * s);
+        const leftLeg = new THREE.Mesh(legGeometry, darkMaterial);
+        leftLeg.position.set(-0.12 * s, 0.3 * s, 0);
+        leftLeg.castShadow = true;
+        this.mesh.add(leftLeg);
+
+        // 6. 右腿
+        const rightLeg = new THREE.Mesh(legGeometry, darkMaterial);
+        rightLeg.position.set(0.12 * s, 0.3 * s, 0);
+        rightLeg.castShadow = true;
+        this.mesh.add(rightLeg);
         
         // 创建光环效果（如果需要）
         if (this.glow) {
-            const glowGeometry = new THREE.RingGeometry(0.6, 0.8, 32);
+            const glowGeometry = new THREE.RingGeometry(0.6 * s, 0.8 * s, 32);
             const glowMaterial = new THREE.MeshBasicMaterial({ 
                 color: 0xffff00,
                 side: THREE.DoubleSide,
@@ -75,7 +108,57 @@ export default class NPC {
             this.glowMesh.rotation.x = -Math.PI / 2;
         }
         
+        // 创建头顶名称标签
+        this.createNameTag();
+        
         return this.mesh;
+    }
+
+    /**
+     * 创建头顶名称标签
+     */
+    createNameTag() {
+        // 创建画布 - 增大尺寸
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 512;
+        canvas.height = 128;
+        
+        // 绘制背景（半透明黑色）
+        context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        context.roundRect(0, 0, canvas.width, canvas.height, 16);
+        context.fill();
+        
+        // 绘制边框
+        context.strokeStyle = 'rgba(255, 215, 0, 0.9)';
+        context.lineWidth = 4;
+        context.roundRect(0, 0, canvas.width, canvas.height, 16);
+        context.stroke();
+        
+        // 只绘制职业（title），增大字体
+        context.font = 'bold 48px Arial, sans-serif';
+        context.fillStyle = '#ffd700';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText(this.title, canvas.width / 2, canvas.height / 2);
+        
+        // 创建纹理
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+        
+        // 创建精灵材质
+        const spriteMaterial = new THREE.SpriteMaterial({ 
+            map: texture,
+            transparent: true
+        });
+        
+        // 创建精灵 - 增大尺寸
+        this.nameTag = new THREE.Sprite(spriteMaterial);
+        this.nameTag.scale.set(5, 1.25, 1);
+        this.nameTag.position.set(0, 2.2 * this.size, 0);
+        
+        // 添加到mesh
+        this.mesh.add(this.nameTag);
     }
 
     /**
@@ -152,6 +235,7 @@ export default class NPC {
         const angle = Math.atan2(dx, dz);
         
         if (this.mesh) {
+            // mesh现在是Group，直接旋转整个组
             this.mesh.rotation.y = angle;
         }
     }

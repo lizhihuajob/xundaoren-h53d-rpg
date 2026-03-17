@@ -233,18 +233,58 @@ export default class Player {
      * 创建3D模型
      */
     createMesh() {
-        // 创建圆柱体（角色）
-        const geometry = new THREE.CylinderGeometry(0.5, 0.5, 1.8, 16);
-        const material = new THREE.MeshLambertMaterial({ 
+        // 创建角色组
+        this.mesh = new THREE.Group();
+        this.mesh.position.set(this.position.x, this.position.y, this.position.z);
+        this.mesh.userData = { type: 'player', entity: this };
+
+        // 身体材质
+        const bodyMaterial = new THREE.MeshLambertMaterial({ 
             color: 0x00aaff,
             emissive: 0x002244
         });
-        
-        this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.position.set(this.position.x, this.position.y + 0.9, this.position.z);
-        this.mesh.castShadow = true;
-        this.mesh.receiveShadow = true;
-        this.mesh.userData = { type: 'player', entity: this };
+        const skinMaterial = new THREE.MeshLambertMaterial({ color: 0xffccaa });
+        const darkMaterial = new THREE.MeshLambertMaterial({ color: 0x333333 });
+
+        // 1. 躯干
+        const torsoGeometry = new THREE.BoxGeometry(0.5, 0.7, 0.3);
+        const torso = new THREE.Mesh(torsoGeometry, bodyMaterial);
+        torso.position.set(0, 1.1, 0);
+        torso.castShadow = true;
+        this.mesh.add(torso);
+
+        // 2. 头部
+        const headGeometry = new THREE.BoxGeometry(0.35, 0.35, 0.35);
+        const head = new THREE.Mesh(headGeometry, skinMaterial);
+        head.position.set(0, 1.7, 0);
+        head.castShadow = true;
+        this.mesh.add(head);
+
+        // 3. 左臂
+        const armGeometry = new THREE.BoxGeometry(0.12, 0.6, 0.12);
+        const leftArm = new THREE.Mesh(armGeometry, skinMaterial);
+        leftArm.position.set(-0.35, 1.1, 0);
+        leftArm.castShadow = true;
+        this.mesh.add(leftArm);
+
+        // 4. 右臂
+        const rightArm = new THREE.Mesh(armGeometry, skinMaterial);
+        rightArm.position.set(0.35, 1.1, 0);
+        rightArm.castShadow = true;
+        this.mesh.add(rightArm);
+
+        // 5. 左腿
+        const legGeometry = new THREE.BoxGeometry(0.15, 0.7, 0.15);
+        const leftLeg = new THREE.Mesh(legGeometry, darkMaterial);
+        leftLeg.position.set(-0.15, 0.35, 0);
+        leftLeg.castShadow = true;
+        this.mesh.add(leftLeg);
+
+        // 6. 右腿
+        const rightLeg = new THREE.Mesh(legGeometry, darkMaterial);
+        rightLeg.position.set(0.15, 0.35, 0);
+        rightLeg.castShadow = true;
+        this.mesh.add(rightLeg);
         
         // 创建头顶倒三角标识
         this.createIndicator();
