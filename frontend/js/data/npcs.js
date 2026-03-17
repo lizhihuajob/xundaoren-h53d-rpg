@@ -6,7 +6,7 @@ export const NPCS = {
     villageChief: {
         id: 'villageChief',
         name: '村长·云老',
-        title: '新手村村长',
+        title: '村长',
         color: 0xffffff,
         size: 1.0,
         position: { x: 0, y: 0, z: 10 },
@@ -39,7 +39,7 @@ export const NPCS = {
     blacksmith: {
         id: 'blacksmith',
         name: '铁匠·王大锤',
-        title: '铸造大师',
+        title: '铁匠',
         color: 0xffa500,
         size: 1.1,
         position: { x: -10, y: 0, z: 5 },
@@ -56,7 +56,7 @@ export const NPCS = {
     trainer: {
         id: 'trainer',
         name: '修炼指导·青衣',
-        title: '技能师傅',
+        title: '修炼指导',
         color: 0x0088ff,
         size: 0.95,
         position: { x: 10, y: 0, z: 5 },
@@ -81,7 +81,7 @@ export const NPCS = {
     guard: {
         id: 'guard',
         name: '守卫·李猛',
-        title: '村庄守卫',
+        title: '守卫',
         color: 0xff0000,
         size: 1.05,
         position: { x: -5, y: 0, z: 10 },
@@ -105,7 +105,7 @@ export const NPCS = {
     doctor: {
         id: 'doctor',
         name: '郎中',
-        title: '医馆大夫',
+        title: '郎中',
         color: 0x00ff88,
         size: 0.95,
         position: { x: -10, y: 0, z: 15 },

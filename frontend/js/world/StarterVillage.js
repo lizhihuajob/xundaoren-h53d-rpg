@@ -76,16 +76,8 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 中央广场（浅色石板）- 移动到医馆和铁匠铺前方
-        const plazaGeometry = new THREE.CircleGeometry(8, 32);
-        const plazaMaterial = new THREE.MeshLambertMaterial({
-            color: 0x808080
-        });
-        const plaza = new THREE.Mesh(plazaGeometry, plazaMaterial);
-        plaza.rotation.x = -Math.PI / 2;
-        plaza.position.set(0, 0.01, 10);
-        plaza.receiveShadow = true;
-        this.scene.add(plaza);
+        // 中央广场（长方形石板）- 移动到医馆和铁匠铺前方
+        this.createPlaza();
         
         // 练功区（略微深色）
         const trainingGeometry = new THREE.PlaneGeometry(15, 15);
@@ -97,6 +89,87 @@ export default class StarterVillage {
         training.position.set(-18, 0.01, -18);
         training.receiveShadow = true;
         this.scene.add(training);
+    }
+
+    /**
+     * 创建中央广场（长方形石板带纹路）
+     */
+    createPlaza() {
+        const plazaWidth = 16;
+        const plazaHeight = 12;
+        const plazaX = 0;
+        const plazaZ = 10;
+        
+        // 创建广场底座
+        const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaHeight);
+        const plazaMaterial = new THREE.MeshLambertMaterial({
+            color: 0x808080
+        });
+        const plaza = new THREE.Mesh(plazaGeometry, plazaMaterial);
+        plaza.rotation.x = -Math.PI / 2;
+        plaza.position.set(plazaX, 0.01, plazaZ);
+        plaza.receiveShadow = true;
+        this.scene.add(plaza);
+        
+        // 创建石板纹路
+        const stoneWidth = 2;
+        const stoneHeight = 1.5;
+        const gap = 0.1;
+        
+        const cols = Math.floor(plazaWidth / (stoneWidth + gap));
+        const rows = Math.floor(plazaHeight / (stoneHeight + gap));
+        
+        const startX = plazaX - (cols * (stoneWidth + gap)) / 2 + stoneWidth / 2;
+        const startZ = plazaZ - (rows * (stoneHeight + gap)) / 2 + stoneHeight / 2;
+        
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                // 随机颜色变化，模拟真实石板
+                const colorVariation = 0.8 + Math.random() * 0.4;
+                const baseColor = 0x707070;
+                const r = Math.floor(((baseColor >> 16) & 0xff) * colorVariation);
+                const g = Math.floor(((baseColor >> 8) & 0xff) * colorVariation);
+                const b = Math.floor((baseColor & 0xff) * colorVariation);
+                const stoneColor = (r << 16) | (g << 8) | b;
+                
+                const stoneGeometry = new THREE.PlaneGeometry(stoneWidth - gap, stoneHeight - gap);
+                const stoneMaterial = new THREE.MeshLambertMaterial({
+                    color: stoneColor
+                });
+                const stone = new THREE.Mesh(stoneGeometry, stoneMaterial);
+                stone.rotation.x = -Math.PI / 2;
+                stone.position.set(
+                    startX + col * (stoneWidth + gap),
+                    0.02,
+                    startZ + row * (stoneHeight + gap)
+                );
+                stone.receiveShadow = true;
+                this.scene.add(stone);
+            }
+        }
+        
+        // 添加边框装饰
+        const borderMaterial = new THREE.MeshLambertMaterial({
+            color: 0x5a5a5a
+        });
+        
+        // 四边边框
+        const borderThickness = 0.3;
+        const borders = [
+            { w: plazaWidth + borderThickness * 2, h: borderThickness, x: plazaX, z: plazaZ - plazaHeight / 2 - borderThickness / 2 },
+            { w: plazaWidth + borderThickness * 2, h: borderThickness, x: plazaX, z: plazaZ + plazaHeight / 2 + borderThickness / 2 },
+            { w: borderThickness, h: plazaHeight, x: plazaX - plazaWidth / 2 - borderThickness / 2, z: plazaZ },
+            { w: borderThickness, h: plazaHeight, x: plazaX + plazaWidth / 2 + borderThickness / 2, z: plazaZ }
+        ];
+        
+        borders.forEach(config => {
+            const borderGeometry = new THREE.BoxGeometry(config.w, 0.1, config.h);
+            const border = new THREE.Mesh(borderGeometry, borderMaterial);
+            border.position.set(config.x, 0.05, config.z);
+            border.castShadow = true;
+            border.receiveShadow = true;
+            this.scene.add(border);
+        });
     }
 
     /**
