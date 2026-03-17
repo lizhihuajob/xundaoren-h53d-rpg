@@ -76,16 +76,18 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 中央广场（棋盘格样式）- 移动到医馆和铁匠铺前方
+        // 村庄广场（棋盘格样式）- 移动到地图西南角
         const plazaWidth = 16;
         const plazaDepth = 12;
+        const plazaX = -18; // 西南角X坐标
+        const plazaZ = 18;  // 西南角Z坐标
         const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaDepth);
         const plazaMaterial = new THREE.MeshLambertMaterial({
             color: 0x707070
         });
         const plaza = new THREE.Mesh(plazaGeometry, plazaMaterial);
         plaza.rotation.x = -Math.PI / 2;
-        plaza.position.set(0, 0.01, 10);
+        plaza.position.set(plazaX, 0.01, plazaZ);
         plaza.receiveShadow = true;
         this.scene.add(plaza);
 
@@ -106,9 +108,9 @@ export default class StarterVillage {
                 const cell = new THREE.Mesh(cellGeometry, cellMaterial);
                 cell.rotation.x = -Math.PI / 2;
                 cell.position.set(
-                    -plazaWidth / 2 + cellWidth * (col + 0.5),
+                    plazaX - plazaWidth / 2 + cellWidth * (col + 0.5),
                     0.02,
-                    10 - plazaDepth / 2 + cellDepth * (row + 0.5)
+                    plazaZ - plazaDepth / 2 + cellDepth * (row + 0.5)
                 );
                 cell.receiveShadow = true;
                 this.scene.add(cell);
@@ -119,8 +121,8 @@ export default class StarterVillage {
         const borderWidth = 0.5;
         const borderDepth = plazaDepth + 1;
         const borderPositions = [
-            { x: -plazaWidth / 2 - borderWidth / 2, z: 10 },
-            { x: plazaWidth / 2 + borderWidth / 2, z: 10 }
+            { x: plazaX - plazaWidth / 2 - borderWidth / 2, z: plazaZ },
+            { x: plazaX + plazaWidth / 2 + borderWidth / 2, z: plazaZ }
         ];
         
         borderPositions.forEach(pos => {
@@ -186,8 +188,8 @@ export default class StarterVillage {
         // 创建医馆
         this.createMedicalHall();
 
-        // 创建修炼台
-        const trainingConfig = { name: '修炼台', x: 15, z: 10, w: 4, h: 2, d: 4, color: 0x4169e1 };
+        // 创建修炼台 - 移动到医馆和铁匠铺附近并排
+        const trainingConfig = { name: '修炼台', x: -6, z: 12, w: 4, h: 2, d: 4, color: 0x4169e1 };
         const trainingGeometry = new THREE.BoxGeometry(trainingConfig.w, trainingConfig.h, trainingConfig.d);
         const trainingMaterial = new THREE.MeshLambertMaterial({
             color: trainingConfig.color
@@ -208,7 +210,8 @@ export default class StarterVillage {
      * 创建医馆
      */
     createMedicalHall() {
-        const config = { name: '医馆', x: -15, z: 15, w: 3, h: 2, d: 2.5, color: 0xf5f5dc };
+        // 医馆在广场北侧边缘，大门向南（朝向广场）
+        const config = { name: '医馆', x: -22, z: 12, w: 3, h: 2, d: 2.5, color: 0xf5f5dc };
 
         // 创建房屋主体
         const bodyGeometry = new THREE.BoxGeometry(config.w, config.h, config.d);
@@ -232,36 +235,36 @@ export default class StarterVillage {
         roof.castShadow = true;
         roof.receiveShadow = true;
 
-        // 创建医馆的门（右边）
-        const doorGeometry = new THREE.BoxGeometry(0.1, 1.25, 0.75);
+        // 创建医馆的门（南边，朝向广场）
+        const doorGeometry = new THREE.BoxGeometry(0.75, 1.25, 0.1);
         const doorMaterial = new THREE.MeshLambertMaterial({
             color: 0x8b4513
         });
         const door = new THREE.Mesh(doorGeometry, doorMaterial);
-        door.position.set(config.w / 2 + 0.05, 0.625, 0);
+        door.position.set(0, 0.625, config.d / 2 + 0.05);
         door.castShadow = true;
         door.receiveShadow = true;
 
-        // 创建医馆招牌（红十字）
-        const signBoardGeometry = new THREE.BoxGeometry(0.1, 0.4, 1);
+        // 创建医馆招牌（红十字）- 放在门上方
+        const signBoardGeometry = new THREE.BoxGeometry(1, 0.4, 0.1);
         const signBoardMaterial = new THREE.MeshLambertMaterial({
             color: 0xffffff
         });
         const signBoard = new THREE.Mesh(signBoardGeometry, signBoardMaterial);
-        signBoard.position.set(config.w / 2 + 0.1, config.h + 0.5, 0);
+        signBoard.position.set(0, config.h + 0.5, config.d / 2 + 0.1);
 
         // 红色十字 - 竖条
-        const crossVGeometry = new THREE.BoxGeometry(0.025, 0.3, 0.15);
+        const crossVGeometry = new THREE.BoxGeometry(0.15, 0.3, 0.025);
         const crossMaterial = new THREE.MeshLambertMaterial({
             color: 0xff0000
         });
         const crossV = new THREE.Mesh(crossVGeometry, crossMaterial);
-        crossV.position.set(config.w / 2 + 0.175, config.h + 0.5, 0);
+        crossV.position.set(0, config.h + 0.5, config.d / 2 + 0.175);
 
         // 红色十字 - 横条
-        const crossHGeometry = new THREE.BoxGeometry(0.025, 0.15, 0.3);
+        const crossHGeometry = new THREE.BoxGeometry(0.3, 0.15, 0.025);
         const crossH = new THREE.Mesh(crossHGeometry, crossMaterial);
-        crossH.position.set(config.w / 2 + 0.175, config.h + 0.5, 0);
+        crossH.position.set(0, config.h + 0.5, config.d / 2 + 0.175);
 
         // 创建药罐装饰
         const jarGeometry = new THREE.CylinderGeometry(0.15, 0.2, 0.4, 8);
@@ -269,11 +272,11 @@ export default class StarterVillage {
             color: 0x8b4513
         });
         const jar1 = new THREE.Mesh(jarGeometry, jarMaterial);
-        jar1.position.set(config.w / 2 + 0.25, 0.2, -1);
+        jar1.position.set(-1, 0.2, config.d / 2 + 0.25);
         jar1.castShadow = true;
 
         const jar2 = new THREE.Mesh(jarGeometry, jarMaterial);
-        jar2.position.set(config.w / 2 + 0.25, 0.2, 1);
+        jar2.position.set(1, 0.2, config.d / 2 + 0.25);
         jar2.castShadow = true;
 
         // 将所有部分组合成一个组
@@ -301,7 +304,8 @@ export default class StarterVillage {
      * 创建铁匠铺（带三角形房顶）
      */
     createBlacksmithBuilding() {
-        const config = { name: '铁匠铺', x: -15, z: 5, w: 2.5, h: 1.75, d: 2.5, color: 0x654321 };
+        // 铁匠铺在广场北侧边缘，与医馆并排，大门向南（朝向广场）
+        const config = { name: '铁匠铺', x: -16, z: 12, w: 2.5, h: 1.75, d: 2.5, color: 0x654321 };
 
         // 创建房屋主体
         const bodyGeometry = new THREE.BoxGeometry(config.w, config.h, config.d);
@@ -338,13 +342,13 @@ export default class StarterVillage {
         chimney.castShadow = true;
         chimney.receiveShadow = true;
 
-        // 创建铁匠铺的门（右边）
-        const doorGeometry = new THREE.BoxGeometry(0.1, 1, 0.6);
+        // 创建铁匠铺的门（南边，朝向广场）
+        const doorGeometry = new THREE.BoxGeometry(0.6, 1, 0.1);
         const doorMaterial = new THREE.MeshLambertMaterial({
             color: 0x3d2817 // 深棕色门
         });
         const door = new THREE.Mesh(doorGeometry, doorMaterial);
-        door.position.set(config.w / 2 + 0.05, 0.5, 0);
+        door.position.set(0, 0.5, config.d / 2 + 0.05);
         door.castShadow = true;
         door.receiveShadow = true;
 
@@ -354,7 +358,7 @@ export default class StarterVillage {
             color: 0xffd700 // 金色把手
         });
         const handle = new THREE.Mesh(handleGeometry, handleMaterial);
-        handle.position.set(config.w / 2 + 0.125, 0.5, 0.2);
+        handle.position.set(0.2, 0.5, config.d / 2 + 0.125);
 
         // 将所有部分组合成一个组
         const buildingGroup = new THREE.Group();

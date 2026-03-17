@@ -9,7 +9,7 @@ export const NPCS = {
         title: '新手村村长',
         color: 0xffffff,
         size: 1.0,
-        position: { x: 0, y: 0, z: 10 },
+        position: { x: -18, y: 0, z: 18 },
         glow: true,
         type: 'quest',
         dialogs: {
@@ -42,7 +42,7 @@ export const NPCS = {
         title: '铸造大师',
         color: 0xffa500,
         size: 1.1,
-        position: { x: -10, y: 0, z: 5 },
+        position: { x: -16, y: 0, z: 15 },
         type: 'craft',
         dialogs: {
             default: {
@@ -59,7 +59,7 @@ export const NPCS = {
         title: '技能师傅',
         color: 0x0088ff,
         size: 0.95,
-        position: { x: 10, y: 0, z: 5 },
+        position: { x: -6, y: 0, z: 15 },
         type: 'trainer',
         dialogs: {
             default: {
@@ -84,7 +84,7 @@ export const NPCS = {
         title: '村庄守卫',
         color: 0xff0000,
         size: 1.05,
-        position: { x: -5, y: 0, z: 10 },
+        position: { x: -12, y: 0, z: 18 },
         type: 'quest',
         dialogs: {
             default: {
@@ -108,7 +108,7 @@ export const NPCS = {
         title: '医馆大夫',
         color: 0x00ff88,
         size: 0.95,
-        position: { x: -10, y: 0, z: 15 },
+        position: { x: -22, y: 0, z: 15 },
         type: 'shop',
         shopItems: ['basicHealingPill'],
         dialogs: {
