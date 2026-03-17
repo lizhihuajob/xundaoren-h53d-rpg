@@ -38,27 +38,74 @@ export default class NPC {
      * 创建3D模型
      */
     createMesh() {
-        // 创建圆柱体
-        const geometry = new THREE.CylinderGeometry(
-            0.4 * this.size, 
-            0.4 * this.size, 
-            1.6 * this.size, 
-            16
-        );
-        const material = new THREE.MeshLambertMaterial({ 
-            color: this.color,
-            emissive: new THREE.Color(this.color).multiplyScalar(0.3)
-        });
-        
-        this.mesh = new THREE.Mesh(geometry, material);
-        this.mesh.position.set(
-            this.position.x, 
-            this.position.y + 0.8 * this.size, 
-            this.position.z
-        );
-        this.mesh.castShadow = true;
-        this.mesh.receiveShadow = true;
+        this.mesh = new THREE.Group();
+        this.mesh.position.set(this.position.x, this.position.y, this.position.z);
         this.mesh.userData = { type: 'npc', entity: this };
+        
+        const s = this.size;
+        const bodyColor = this.color;
+        const limbColor = new THREE.Color(this.color).multiplyScalar(0.8);
+        const headColor = 0xffccaa;
+        
+        // 身体
+        const bodyGeometry = new THREE.BoxGeometry(0.6 * s, 0.8 * s, 0.4 * s);
+        const bodyMaterial = new THREE.MeshLambertMaterial({ 
+            color: bodyColor,
+            emissive: new THREE.Color(this.color).multiplyScalar(0.2)
+        });
+        const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+        body.position.set(0, 1.0 * s, 0);
+        body.castShadow = true;
+        body.receiveShadow = true;
+        this.mesh.add(body);
+        
+        // 头部
+        const headGeometry = new THREE.SphereGeometry(0.3 * s, 16, 16);
+        const headMaterial = new THREE.MeshLambertMaterial({ color: headColor });
+        const head = new THREE.Mesh(headGeometry, headMaterial);
+        head.position.set(0, 1.75 * s, 0);
+        head.castShadow = true;
+        head.receiveShadow = true;
+        this.mesh.add(head);
+        
+        // 左臂
+        const leftArmGeometry = new THREE.CylinderGeometry(0.15 * s, 0.15 * s, 0.6 * s, 8);
+        const leftArmMaterial = new THREE.MeshLambertMaterial({ color: limbColor });
+        const leftArm = new THREE.Mesh(leftArmGeometry, leftArmMaterial);
+        leftArm.position.set(-0.4 * s, 0.7 * s, 0);
+        leftArm.castShadow = true;
+        leftArm.receiveShadow = true;
+        this.mesh.add(leftArm);
+        
+        // 右臂
+        const rightArmGeometry = new THREE.CylinderGeometry(0.15 * s, 0.15 * s, 0.6 * s, 8);
+        const rightArmMaterial = new THREE.MeshLambertMaterial({ color: limbColor });
+        const rightArm = new THREE.Mesh(rightArmGeometry, rightArmMaterial);
+        rightArm.position.set(0.4 * s, 0.7 * s, 0);
+        rightArm.castShadow = true;
+        rightArm.receiveShadow = true;
+        this.mesh.add(rightArm);
+        
+        // 左腿
+        const leftLegGeometry = new THREE.CylinderGeometry(0.15 * s, 0.15 * s, 0.7 * s, 8);
+        const leftLegMaterial = new THREE.MeshLambertMaterial({ color: limbColor });
+        const leftLeg = new THREE.Mesh(leftLegGeometry, leftLegMaterial);
+        leftLeg.position.set(-0.2 * s, 0.35 * s, 0);
+        leftLeg.castShadow = true;
+        leftLeg.receiveShadow = true;
+        this.mesh.add(leftLeg);
+        
+        // 右腿
+        const rightLegGeometry = new THREE.CylinderGeometry(0.15 * s, 0.15 * s, 0.7 * s, 8);
+        const rightLegMaterial = new THREE.MeshLambertMaterial({ color: limbColor });
+        const rightLeg = new THREE.Mesh(rightLegGeometry, rightLegMaterial);
+        rightLeg.position.set(0.2 * s, 0.35 * s, 0);
+        rightLeg.castShadow = true;
+        rightLeg.receiveShadow = true;
+        this.mesh.add(rightLeg);
+        
+        // 创建名称标签
+        this.createNameTag();
         
         // 创建光环效果（如果需要）
         if (this.glow) {
@@ -76,6 +123,38 @@ export default class NPC {
         }
         
         return this.mesh;
+    }
+    
+    /**
+     * 创建头顶名称标签
+     */
+    createNameTag() {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 256;
+        canvas.height = 64;
+        
+        context.font = 'Bold 40px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        
+        context.fillStyle = 'gold';
+        const displayName = this.name.includes('·') ? this.name.split('·')[0] : this.name;
+        context.fillText(displayName, canvas.width / 2, canvas.height / 2);
+        
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.needsUpdate = true;
+        
+        const material = new THREE.SpriteMaterial({
+            map: texture,
+            transparent: true,
+            depthTest: false
+        });
+        
+        this.nameTag = new THREE.Sprite(material);
+        this.nameTag.scale.set(3, 0.75, 1);
+        this.nameTag.position.set(0, 2.2 * this.size, 0);
+        this.mesh.add(this.nameTag);
     }
 
     /**
