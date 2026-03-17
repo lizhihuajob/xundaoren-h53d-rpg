@@ -84,7 +84,7 @@ export const NPCS = {
         title: '村庄守卫',
         color: 0xff0000,
         size: 1.05,
-        position: { x: -12, y: 0, z: 18 },
+        position: { x: 4, y: 0, z: 7.5 },
         type: 'quest',
         dialogs: {
             default: {
