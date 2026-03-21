@@ -76,11 +76,13 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 村庄广场（棋盘格样式）- 移动到地图西南角
-        const plazaWidth = 16;
-        const plazaDepth = 12;
-        const plazaX = -18; // 西南角X坐标
-        const plazaZ = 18;  // 西南角Z坐标
+        // 村庄广场（棋盘格样式）- 扩大到包含医馆、铁匠铺和修炼台
+        // 建筑物位置：医馆(-22, 12)、铁匠铺(-16, 12)、修炼台(-6, 12)
+        // 广场需要覆盖从 x=-24 到 x=-4 (宽度20)，z=8 到 z=20 (深度12)
+        const plazaWidth = 24;  // 扩大到包含所有建筑物
+        const plazaDepth = 16;  // 增加深度
+        const plazaX = -14;     // 中心点X坐标，覆盖 -26 到 -2
+        const plazaZ = 14;      // 中心点Z坐标，覆盖 6 到 22
         const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaDepth);
         const plazaMaterial = new THREE.MeshLambertMaterial({
             color: 0x707070
@@ -96,7 +98,7 @@ export default class StarterVillage {
         const gridCols = 6; // 横向格子数
         const cellWidth = plazaWidth / gridCols;
         const cellDepth = plazaDepth / gridRows;
-        
+
         for (let row = 0; row < gridRows; row++) {
             for (let col = 0; col < gridCols; col++) {
                 // 棋盘格效果：交替颜色
@@ -117,16 +119,21 @@ export default class StarterVillage {
             }
         }
 
-        // 广场边缘装饰
+        // 广场边缘装饰 - 四边
         const borderWidth = 0.5;
-        const borderDepth = plazaDepth + 1;
-        const borderPositions = [
-            { x: plazaX - plazaWidth / 2 - borderWidth / 2, z: plazaZ },
-            { x: plazaX + plazaWidth / 2 + borderWidth / 2, z: plazaZ }
+        // 左右边框
+        const borderPositionsH = [
+            { x: plazaX - plazaWidth / 2 - borderWidth / 2, z: plazaZ, w: borderWidth, d: plazaDepth },
+            { x: plazaX + plazaWidth / 2 + borderWidth / 2, z: plazaZ, w: borderWidth, d: plazaDepth }
         ];
-        
-        borderPositions.forEach(pos => {
-            const borderGeometry = new THREE.PlaneGeometry(borderWidth, borderDepth);
+        // 上下边框
+        const borderPositionsV = [
+            { x: plazaX, z: plazaZ - plazaDepth / 2 - borderWidth / 2, w: plazaWidth + borderWidth * 2, d: borderWidth },
+            { x: plazaX, z: plazaZ + plazaDepth / 2 + borderWidth / 2, w: plazaWidth + borderWidth * 2, d: borderWidth }
+        ];
+
+        [...borderPositionsH, ...borderPositionsV].forEach(pos => {
+            const borderGeometry = new THREE.PlaneGeometry(pos.w, pos.d);
             const borderMaterial = new THREE.MeshLambertMaterial({
                 color: 0x4a4a4a
             });
@@ -189,7 +196,7 @@ export default class StarterVillage {
         this.createMedicalHall();
 
         // 创建修炼台 - 移动到医馆和铁匠铺附近并排
-        const trainingConfig = { name: '修炼台', x: -6, z: 12, w: 4, h: 2, d: 4, color: 0x4169e1 };
+        const trainingConfig = { name: '修炼台', x: -8, z: 12, w: 4, h: 2, d: 4, color: 0x4169e1 };
         const trainingGeometry = new THREE.BoxGeometry(trainingConfig.w, trainingConfig.h, trainingConfig.d);
         const trainingMaterial = new THREE.MeshLambertMaterial({
             color: trainingConfig.color
@@ -382,27 +389,46 @@ export default class StarterVillage {
      * 创建装饰物
      */
     createDecorations() {
-        // 树木（圆锥 + 圆柱）- 移到野区的树
+        // 只保留野区（怪物区域）的树木和石头，村子里完全不放
+
+        // 树木（圆锥 + 圆柱）- 只分布在野区（怪物区域）
         const treePositions = [
-            { x: 10, z: 18 },
-            { x: -8, z: -8 },
-            { x: 8, z: -10 },
-            { x: 18, z: 5 },
-            // 野区树木（兔妖区域附近）
+            // 野区树木（兔妖区域附近 - 西北方向）
             { x: -18, z: -12 },
             { x: -22, z: -12 },
-            // 野区树木（木灵区域附近）
+            { x: -20, z: -8 },
+            { x: -24, z: -5 },
+            { x: -12, z: -18 },
+            { x: -15, z: -15 },
+            { x: -18, z: -5 },
+            // 野区树木（木灵区域附近 - 东北方向）
             { x: 18, z: -18 },
             { x: 22, z: -22 },
-            // 野区树木（石魔区域附近）
+            { x: 20, z: -15 },
+            { x: 24, z: -18 },
+            { x: 16, z: -12 },
+            { x: 18, z: -12 },
+            // 野区树木（石魔区域附近 - 正北方向）
             { x: -3, z: -20 },
-            { x: 3, z: -20 }
+            { x: 3, z: -20 },
+            { x: 0, z: -24 },
+            { x: -6, z: -22 },
+            { x: 6, z: -22 },
+            { x: -8, z: -20 },
+            { x: 8, z: -20 }
         ];
 
         treePositions.forEach((pos, index) => {
+            // 随机大小变化
+            const scale = 0.8 + Math.random() * 0.4;
+            // 随机旋转
+            const rotation = Math.random() * Math.PI * 2;
+
             // 创建树的容器组
             const treeGroup = new THREE.Group();
             treeGroup.position.set(pos.x, 0, pos.z);
+            treeGroup.rotation.y = rotation;
+            treeGroup.scale.set(scale, scale, scale);
 
             // 树干
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 1.5, 8);
@@ -412,9 +438,11 @@ export default class StarterVillage {
             trunk.castShadow = true;
             treeGroup.add(trunk);
 
-            // 树冠
+            // 树冠 - 使用不同深浅的绿色
             const crownGeometry = new THREE.ConeGeometry(1.5, 3, 8);
-            const crownMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
+            const greenShades = [0x228b22, 0x2e8b57, 0x3cb371, 0x006400];
+            const crownColor = greenShades[Math.floor(Math.random() * greenShades.length)];
+            const crownMaterial = new THREE.MeshLambertMaterial({ color: crownColor });
             const crown = new THREE.Mesh(crownGeometry, crownMaterial);
             crown.position.set(0, 3, 0);
             crown.castShadow = true;
@@ -427,11 +455,25 @@ export default class StarterVillage {
             this.decorations.push(treeGroup);
         });
 
-        // 岩石
+        // 岩石 - 只分布在野区（怪物区域）
         const rockPositions = [
+            // 兔妖区域岩石（西北野区）
             { x: -22, z: -10, s: 1 },
-            { x: 20, z: 15, s: 0.8 },
-            { x: 5, z: -20, s: 1.2 }
+            { x: -20, z: -14, s: 0.8 },
+            { x: -24, z: -15, s: 1.2 },
+            { x: -18, z: -5, s: 0.5 },
+            { x: -16, z: -8, s: 0.6 },
+            // 木灵区域岩石（东北野区）
+            { x: 20, z: -15, s: 0.8 },
+            { x: 22, z: -18, s: 1 },
+            { x: 18, z: -12, s: 0.6 },
+            { x: 24, z: -20, s: 0.9 },
+            // 石魔区域岩石（正北野区，更多更大的岩石）
+            { x: 5, z: -20, s: 1.2 },
+            { x: -2, z: -22, s: 1.5 },
+            { x: 2, z: -24, s: 1 },
+            { x: -5, z: -18, s: 0.8 },
+            { x: 8, z: -22, s: 1.3 }
         ];
 
         rockPositions.forEach(pos => {
@@ -445,6 +487,49 @@ export default class StarterVillage {
             this.scene.add(rock);
             this.decorations.push(rock);
         });
+
+        // 小石头 - 只散落在野区
+        for (let i = 0; i < 20; i++) {
+            const x = (Math.random() - 0.5) * 30;
+            const z = -5 - Math.random() * 20; // 只在北侧野区生成 (z < -5)
+
+            const size = 0.1 + Math.random() * 0.25;
+            const geometry = new THREE.DodecahedronGeometry(size);
+            const material = new THREE.MeshLambertMaterial({ color: 0x808080 });
+            const stone = new THREE.Mesh(geometry, material);
+            stone.position.set(x, size * 0.3, z);
+            stone.rotation.set(Math.random(), Math.random(), Math.random());
+            stone.castShadow = true;
+            this.scene.add(stone);
+            this.decorations.push(stone);
+        }
+
+        // 草丛装饰 - 只分布在野区
+        for (let i = 0; i < 25; i++) {
+            const x = (Math.random() - 0.5) * 35;
+            const z = -5 - Math.random() * 22; // 只在北侧野区生成 (z < -5)
+
+            const grassGroup = new THREE.Group();
+            grassGroup.position.set(x, 0, z);
+
+            // 创建几簇草叶
+            for (let j = 0; j < 3 + Math.floor(Math.random() * 3); j++) {
+                const grassGeometry = new THREE.ConeGeometry(0.05, 0.3 + Math.random() * 0.2, 4);
+                const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x4a7c4a });
+                const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+                grass.position.set(
+                    (Math.random() - 0.5) * 0.3,
+                    0,
+                    (Math.random() - 0.5) * 0.3
+                );
+                grass.rotation.y = Math.random() * Math.PI * 2;
+                grass.rotation.z = (Math.random() - 0.5) * 0.3;
+                grassGroup.add(grass);
+            }
+
+            this.scene.add(grassGroup);
+            this.decorations.push(grassGroup);
+        }
     }
 
     /**
