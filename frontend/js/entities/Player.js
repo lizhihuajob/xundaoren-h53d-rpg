@@ -628,5 +628,22 @@ export default class Player {
         Object.assign(this, data);
         this.hp = Math.min(this.hp, this.maxHp);
         this.mp = Math.min(this.mp, this.maxMp);
+        
+        // 确保inventory数组正确初始化
+        if (!this.inventory || !Array.isArray(this.inventory)) {
+            this.inventory = new Array(24).fill(null);
+        } else {
+            // 确保数组长度为24，不足的用null填充
+            while (this.inventory.length < 24) {
+                this.inventory.push(null);
+            }
+            // 确保所有元素要么是有效的物品对象，要么是null
+            this.inventory = this.inventory.map(slot => {
+                if (slot && typeof slot === 'object' && slot.itemId) {
+                    return slot;
+                }
+                return null;
+            });
+        }
     }
 }
