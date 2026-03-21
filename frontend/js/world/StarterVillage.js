@@ -76,11 +76,12 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 村庄广场（棋盘格样式）- 移动到地图西南角
-        const plazaWidth = 16;
-        const plazaDepth = 12;
-        const plazaX = -18; // 西南角X坐标
-        const plazaZ = 18;  // 西南角Z坐标
+        // 村庄广场（棋盘格样式）
+        // 包含医馆(x=-22)、铁匠铺(x=-16)、修炼台(x=-6)
+        const plazaWidth = 24;
+        const plazaDepth = 14;
+        const plazaX = -14;
+        const plazaZ = 17;
         const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaDepth);
         const plazaMaterial = new THREE.MeshLambertMaterial({
             color: 0x707070
@@ -92,14 +93,13 @@ export default class StarterVillage {
         this.scene.add(plaza);
 
         // 广场棋盘格纹路
-        const gridRows = 4; // 纵向格子数
-        const gridCols = 6; // 横向格子数
+        const gridRows = 7;
+        const gridCols = 12;
         const cellWidth = plazaWidth / gridCols;
         const cellDepth = plazaDepth / gridRows;
         
         for (let row = 0; row < gridRows; row++) {
             for (let col = 0; col < gridCols; col++) {
-                // 棋盘格效果：交替颜色
                 const isDark = (row + col) % 2 === 1;
                 const cellGeometry = new THREE.PlaneGeometry(cellWidth, cellDepth);
                 const cellMaterial = new THREE.MeshLambertMaterial({
@@ -380,31 +380,45 @@ export default class StarterVillage {
 
     /**
      * 创建装饰物
+     * 只在野区（z < 10）添加装饰，村子内部不添加
      */
     createDecorations() {
-        // 树木（圆锥 + 圆柱）- 移到野区的树
+        // 树木 - 只在野区（z < 10）
         const treePositions = [
-            { x: 10, z: 18 },
-            { x: -8, z: -8 },
-            { x: 8, z: -10 },
-            { x: 18, z: 5 },
-            // 野区树木（兔妖区域附近）
+            // 兔妖区域附近（西北野区）
             { x: -18, z: -12 },
             { x: -22, z: -12 },
-            // 野区树木（木灵区域附近）
+            { x: -15, z: -8 },
+            { x: -20, z: -6 },
+            { x: -18, z: -16 },
+            { x: -22, z: -8 },
+            // 木灵区域附近（东北野区）
             { x: 18, z: -18 },
-            { x: 22, z: -22 },
-            // 野区树木（石魔区域附近）
+            { x: 22, z: -20 },
+            { x: 16, z: -14 },
+            { x: 20, z: -12 },
+            { x: 18, z: -8 },
+            // 石魔区域附近（北部野区）
             { x: -3, z: -20 },
-            { x: 3, z: -20 }
+            { x: 3, z: -20 },
+            { x: -6, z: -18 },
+            { x: 6, z: -18 },
+            { x: 0, z: -16 },
+            // 野区其他位置
+            { x: -8, z: -8 },
+            { x: 8, z: -10 },
+            { x: -12, z: -5 },
+            { x: 12, z: -5 },
+            { x: -15, z: 2 },
+            { x: 15, z: 2 },
+            { x: -20, z: -2 },
+            { x: 20, z: -2 }
         ];
 
         treePositions.forEach((pos, index) => {
-            // 创建树的容器组
             const treeGroup = new THREE.Group();
             treeGroup.position.set(pos.x, 0, pos.z);
 
-            // 树干
             const trunkGeometry = new THREE.CylinderGeometry(0.3, 0.4, 1.5, 8);
             const trunkMaterial = new THREE.MeshLambertMaterial({ color: 0x4a3728 });
             const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
@@ -412,7 +426,6 @@ export default class StarterVillage {
             trunk.castShadow = true;
             treeGroup.add(trunk);
 
-            // 树冠
             const crownGeometry = new THREE.ConeGeometry(1.5, 3, 8);
             const crownMaterial = new THREE.MeshLambertMaterial({ color: 0x228b22 });
             const crown = new THREE.Mesh(crownGeometry, crownMaterial);
@@ -420,18 +433,31 @@ export default class StarterVillage {
             crown.castShadow = true;
             treeGroup.add(crown);
 
-            // 添加 userData 用于悬停提示
             treeGroup.userData = { type: 'tree', entity: { name: '灵树' } };
 
             this.scene.add(treeGroup);
             this.decorations.push(treeGroup);
         });
 
-        // 岩石
+        // 岩石 - 只在野区
         const rockPositions = [
-            { x: -22, z: -10, s: 1 },
-            { x: 20, z: 15, s: 0.8 },
-            { x: 5, z: -20, s: 1.2 }
+            // 兔妖区域
+            { x: -22, z: -10, s: 1.2 },
+            { x: -18, z: -14, s: 0.8 },
+            { x: -20, z: -18, s: 1.0 },
+            // 木灵区域
+            { x: 20, z: -15, s: 1.0 },
+            { x: 18, z: -20, s: 0.9 },
+            { x: 22, z: -10, s: 0.8 },
+            // 石魔区域
+            { x: 5, z: -20, s: 1.2 },
+            { x: -5, z: -22, s: 1.1 },
+            { x: 0, z: -18, s: 0.8 },
+            // 野区其他位置
+            { x: -15, z: -5, s: 0.6 },
+            { x: 12, z: -5, s: 0.7 },
+            { x: -18, z: 0, s: 0.5 },
+            { x: 18, z: 0, s: 0.5 }
         ];
 
         rockPositions.forEach(pos => {
@@ -444,6 +470,39 @@ export default class StarterVillage {
             rock.userData = { type: 'rock', entity: { name: '岩石' } };
             this.scene.add(rock);
             this.decorations.push(rock);
+        });
+
+        // 小石头 - 只在野区
+        const stonePositions = [
+            // 兔妖区域
+            { x: -19, z: -16, s: 0.3 },
+            { x: -21, z: -14, s: 0.25 },
+            { x: -17, z: -10, s: 0.2 },
+            // 木灵区域
+            { x: 19, z: -16, s: 0.3 },
+            { x: 21, z: -18, s: 0.25 },
+            { x: 17, z: -12, s: 0.2 },
+            // 石魔区域
+            { x: 2, z: -22, s: 0.3 },
+            { x: -2, z: -21, s: 0.25 },
+            { x: 4, z: -18, s: 0.2 },
+            // 野区其他位置
+            { x: -10, z: -10, s: 0.25 },
+            { x: 10, z: -8, s: 0.2 },
+            { x: -14, z: 0, s: 0.3 },
+            { x: 14, z: 0, s: 0.25 }
+        ];
+
+        stonePositions.forEach(pos => {
+            const geometry = new THREE.DodecahedronGeometry(pos.s);
+            const material = new THREE.MeshLambertMaterial({ color: 0x808080 });
+            const stone = new THREE.Mesh(geometry, material);
+            stone.position.set(pos.x, pos.s * 0.5, pos.z);
+            stone.rotation.set(Math.random(), Math.random(), Math.random());
+            stone.castShadow = true;
+            stone.userData = { type: 'rock', entity: { name: '石头' } };
+            this.scene.add(stone);
+            this.decorations.push(stone);
         });
     }
 

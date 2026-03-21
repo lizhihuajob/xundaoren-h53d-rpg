@@ -353,13 +353,20 @@ class Game {
 
             if (intersects.length > 0) {
                 const hit = intersects[0].object;
-                const entity = hit.userData.entity;
+                // 向上查找到包含 userData 的父对象（NPC/怪物使用Group作为容器）
+                let target = hit;
+                while (target && !target.userData?.type && target.parent) {
+                    target = target.parent;
+                }
+                
+                const entity = target.userData?.entity;
+                const type = target.userData?.type;
 
-                if (entity) {
-                    if (hit.userData.type === 'monster' && !entity.isDead) {
+                if (entity && type) {
+                    if (type === 'monster' && !entity.isDead) {
                         this.combat.setTarget(entity);
                         this.ui.updateTargetFrame(entity);
-                    } else if (hit.userData.type === 'npc') {
+                    } else if (type === 'npc') {
                         this.interactWithNPC(entity);
                     }
                 }
