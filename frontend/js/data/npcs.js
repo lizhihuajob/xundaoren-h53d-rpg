@@ -59,7 +59,7 @@ export const NPCS = {
         title: '技能师傅',
         color: 0x0088ff,
         size: 0.95,
-        position: { x: -6, y: 0, z: 15 },
+        position: { x: -8, y: 0, z: 16 },
         type: 'trainer',
         dialogs: {
             default: {

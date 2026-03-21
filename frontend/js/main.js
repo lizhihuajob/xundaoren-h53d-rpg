@@ -353,13 +353,18 @@ class Game {
 
             if (intersects.length > 0) {
                 const hit = intersects[0].object;
-                const entity = hit.userData.entity;
+                // 向上查找到包含 userData 的父对象
+                let target = hit;
+                while (target && !target.userData?.type && target.parent) {
+                    target = target.parent;
+                }
+                const entity = target?.userData?.entity;
 
                 if (entity) {
-                    if (hit.userData.type === 'monster' && !entity.isDead) {
+                    if (target.userData.type === 'monster' && !entity.isDead) {
                         this.combat.setTarget(entity);
                         this.ui.updateTargetFrame(entity);
-                    } else if (hit.userData.type === 'npc') {
+                    } else if (target.userData.type === 'npc') {
                         this.interactWithNPC(entity);
                     }
                 }
@@ -872,22 +877,25 @@ class Game {
             }
 
             // 检查背包是否有空间
-            const emptySlot = this.player.inventory.findIndex(slot => slot === null);
-            if (emptySlot === -1) {
-                // 检查是否可以堆叠
-                const stackableSlot = this.player.inventory.findIndex(slot =>
-                    slot && slot.itemId === item.id && slot.count < item.maxStack
-                );
-                if (stackableSlot === -1) {
-                    return { success: false, message: '背包已满' };
-                }
+            // 1. 先检查是否可以堆叠到已有物品
+            const canStack = item.stackable && this.player.inventory.some(slot =>
+                slot && slot.itemId === item.id && slot.count < item.maxStack
+            );
+            // 2. 再检查是否有空格子
+            const hasEmptySlot = this.player.inventory.some(slot => slot === null);
+
+            console.log('购买检查:', { itemId: item.id, stackable: item.stackable, canStack, hasEmptySlot, inventory: this.player.inventory });
+
+            if (!canStack && !hasEmptySlot) {
+                return { success: false, message: '背包已满' };
             }
 
             // 扣除金币
             this.player.gold -= item.price;
 
             // 添加物品到背包
-            this.player.addItem(item, 1);
+            const addResult = this.player.addItem(item, 1);
+            console.log('添加物品结果:', addResult);
 
             // 更新UI
             this.ui.updatePlayerHUD(this.player);
