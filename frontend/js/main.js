@@ -353,13 +353,18 @@ class Game {
 
             if (intersects.length > 0) {
                 const hit = intersects[0].object;
-                const entity = hit.userData.entity;
+                // 向上查找包含entity的父对象（处理Group嵌套的情况）
+                let target = hit;
+                while (target && !target.userData?.entity && target.parent) {
+                    target = target.parent;
+                }
+                const entity = target?.userData?.entity;
 
                 if (entity) {
-                    if (hit.userData.type === 'monster' && !entity.isDead) {
+                    if (target.userData.type === 'monster' && !entity.isDead) {
                         this.combat.setTarget(entity);
                         this.ui.updateTargetFrame(entity);
-                    } else if (hit.userData.type === 'npc') {
+                    } else if (target.userData.type === 'npc') {
                         this.interactWithNPC(entity);
                     }
                 }
@@ -871,8 +876,8 @@ class Game {
                 return { success: false, message: '金币不足' };
             }
 
-            // 检查背包是否有空间
-            const emptySlot = this.player.inventory.findIndex(slot => slot === null);
+            // 检查背包是否有空间（修复：同时处理null和undefined的情况）
+            const emptySlot = this.player.inventory.findIndex(slot => slot == null);
             if (emptySlot === -1) {
                 // 检查是否可以堆叠
                 const stackableSlot = this.player.inventory.findIndex(slot =>

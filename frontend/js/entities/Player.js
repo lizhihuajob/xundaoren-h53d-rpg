@@ -628,5 +628,18 @@ export default class Player {
         Object.assign(this, data);
         this.hp = Math.min(this.hp, this.maxHp);
         this.mp = Math.min(this.mp, this.maxMp);
+        
+        // 确保背包有正确的24个槽位（修复：null和undefined都视为空槽位）
+        if (this.inventory) {
+            // 扩展到24个槽位，undefined转为null
+            const fixedInventory = [];
+            for (let i = 0; i < this.maxInventory; i++) {
+                fixedInventory[i] = this.inventory[i] || null;
+            }
+            this.inventory = fixedInventory;
+        } else {
+            // 如果没有背包数据，初始化一个新的
+            this.inventory = new Array(this.maxInventory).fill(null);
+        }
     }
 }

@@ -76,11 +76,11 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 村庄广场（棋盘格样式）- 移动到地图西南角
-        const plazaWidth = 16;
-        const plazaDepth = 12;
-        const plazaX = -18; // 西南角X坐标
-        const plazaZ = 18;  // 西南角Z坐标
+        // 村庄广场（棋盘格样式）- 扩大以包含医馆、铁匠铺和修炼台
+        const plazaWidth = 24;  // 从16扩大到24，东西方向延伸
+        const plazaDepth = 16;  // 从12扩大到16，南北方向延伸
+        const plazaX = -14;     // 中心X坐标调整
+        const plazaZ = 14;      // 中心Z坐标调整（向北移动包含建筑物）
         const plazaGeometry = new THREE.PlaneGeometry(plazaWidth, plazaDepth);
         const plazaMaterial = new THREE.MeshLambertMaterial({
             color: 0x707070
@@ -92,8 +92,8 @@ export default class StarterVillage {
         this.scene.add(plaza);
 
         // 广场棋盘格纹路
-        const gridRows = 4; // 纵向格子数
-        const gridCols = 6; // 横向格子数
+        const gridRows = 6; // 纵向格子数（从4增加到6）
+        const gridCols = 8; // 横向格子数（从6增加到8）
         const cellWidth = plazaWidth / gridCols;
         const cellDepth = plazaDepth / gridRows;
         
@@ -120,13 +120,16 @@ export default class StarterVillage {
         // 广场边缘装饰
         const borderWidth = 0.5;
         const borderDepth = plazaDepth + 1;
+        const borderLength = plazaWidth + 1;
         const borderPositions = [
-            { x: plazaX - plazaWidth / 2 - borderWidth / 2, z: plazaZ },
-            { x: plazaX + plazaWidth / 2 + borderWidth / 2, z: plazaZ }
+            { x: plazaX - plazaWidth / 2 - borderWidth / 2, z: plazaZ, w: borderWidth, d: borderDepth },  // 西边
+            { x: plazaX + plazaWidth / 2 + borderWidth / 2, z: plazaZ, w: borderWidth, d: borderDepth },  // 东边
+            { x: plazaX, z: plazaZ - plazaDepth / 2 - borderWidth / 2, w: borderLength, d: borderWidth },  // 南边
+            { x: plazaX, z: plazaZ + plazaDepth / 2 + borderWidth / 2, w: borderLength, d: borderWidth }   // 北边
         ];
         
         borderPositions.forEach(pos => {
-            const borderGeometry = new THREE.PlaneGeometry(borderWidth, borderDepth);
+            const borderGeometry = new THREE.PlaneGeometry(pos.w, pos.d);
             const borderMaterial = new THREE.MeshLambertMaterial({
                 color: 0x4a4a4a
             });
@@ -188,7 +191,7 @@ export default class StarterVillage {
         // 创建医馆
         this.createMedicalHall();
 
-        // 创建修炼台 - 移动到医馆和铁匠铺附近并排
+        // 创建修炼台 - 放回原来的位置
         const trainingConfig = { name: '修炼台', x: -6, z: 12, w: 4, h: 2, d: 4, color: 0x4169e1 };
         const trainingGeometry = new THREE.BoxGeometry(trainingConfig.w, trainingConfig.h, trainingConfig.d);
         const trainingMaterial = new THREE.MeshLambertMaterial({
@@ -382,21 +385,44 @@ export default class StarterVillage {
      * 创建装饰物
      */
     createDecorations() {
-        // 树木（圆锥 + 圆柱）- 移到野区的树
+        // 树木（圆锥 + 圆柱）- 严格在村子外围和野区（村子内部范围：X:-25~5, Z:5~25）
         const treePositions = [
-            { x: 10, z: 18 },
-            { x: -8, z: -8 },
-            { x: 8, z: -10 },
-            { x: 18, z: 5 },
-            // 野区树木（兔妖区域附近）
-            { x: -18, z: -12 },
-            { x: -22, z: -12 },
-            // 野区树木（木灵区域附近）
-            { x: 18, z: -18 },
-            { x: 22, z: -22 },
-            // 野区树木（石魔区域附近）
-            { x: -3, z: -20 },
-            { x: 3, z: -20 }
+            // 北边围墙外（Z > 25，确保在村子北边外面）
+            { x: -20, z: 26 },
+            { x: -10, z: 26 },
+            { x: 0, z: 26 },
+            { x: 10, z: 26 },
+            { x: 20, z: 26 },
+            // 西边围墙外（X < -25）
+            { x: -27, z: 20 },
+            { x: -27, z: 10 },
+            { x: -27, z: 0 },
+            { x: -27, z: -10 },
+            { x: -27, z: -20 },
+            // 东边围墙外（X > 5）
+            { x: 8, z: 20 },
+            { x: 10, z: 10 },
+            { x: 12, z: 0 },
+            { x: 14, z: -10 },
+            { x: 16, z: -20 },
+            // 野区树木（兔妖区域附近，村子西边，Z < 5）
+            { x: -18, z: 0 },
+            { x: -22, z: -5 },
+            { x: -20, z: -12 },
+            { x: -16, z: -18 },
+            { x: -14, z: -8 },
+            // 野区树木（木灵区域附近，村子东边，Z < 5）
+            { x: 18, z: -5 },
+            { x: 22, z: -12 },
+            { x: 16, z: -18 },
+            { x: 20, z: -22 },
+            { x: 14, z: -14 },
+            // 野区树木（石魔区域附近，村子南边，Z < 5）
+            { x: -8, z: -20 },
+            { x: 8, z: -20 },
+            { x: -5, z: -24 },
+            { x: 5, z: -24 },
+            { x: 0, z: -26 }
         ];
 
         treePositions.forEach((pos, index) => {
@@ -427,11 +453,48 @@ export default class StarterVillage {
             this.decorations.push(treeGroup);
         });
 
-        // 岩石
+        // 岩石 - 严格在村子外围和野区（村子内部范围：X:-25~5, Z:5~25）
         const rockPositions = [
-            { x: -22, z: -10, s: 1 },
-            { x: 20, z: 15, s: 0.8 },
-            { x: 5, z: -20, s: 1.2 }
+            // 北边围墙外（Z > 25）
+            { x: -15, z: 27, s: 0.7 },
+            { x: 5, z: 27, s: 0.6 },
+            // 西边围墙外（X < -25）
+            { x: -28, z: 15, s: 0.8 },
+            { x: -28, z: -5, s: 1 },
+            { x: -28, z: -15, s: 0.7 },
+            // 东边围墙外（X > 5）
+            { x: 10, z: 22, s: 0.6 },
+            { x: 18, z: 15, s: 0.9 },
+            { x: 20, z: -5, s: 0.8 },
+            // 野区岩石（兔妖区域附近，Z < 5）
+            { x: -20, z: 0, s: 1 },
+            { x: -18, z: -10, s: 0.6 },
+            // 野区岩石（木灵区域附近，Z < 5）
+            { x: 20, z: -10, s: 0.8 },
+            { x: 22, z: -15, s: 0.9 },
+            // 野区岩石（石魔区域附近，Z < 5）
+            { x: 0, z: -20, s: 1.2 },
+            { x: -8, z: -24, s: 0.5 },
+            { x: 10, z: -22, s: 0.8 }
+        ];
+
+        // 小石头（更小的岩石）- 严格在村子外围（村子内部范围：X:-25~5, Z:5~25）
+        const smallStonePositions = [
+            // 北边围墙外（Z > 25）
+            { x: -20, z: 27, s: 0.3 },
+            { x: -5, z: 27, s: 0.25 },
+            { x: 15, z: 27, s: 0.3 },
+            // 西边围墙外（X < -25）
+            { x: -28, z: 20, s: 0.28 },
+            { x: -28, z: 0, s: 0.32 },
+            { x: -28, z: -20, s: 0.26 },
+            // 东边围墙外（X > 5）
+            { x: 8, z: 18, s: 0.35 },
+            { x: 15, z: 5, s: 0.28 },
+            { x: 18, z: -15, s: 0.3 },
+            // 南边野区（Z < 5）
+            { x: -10, z: -5, s: 0.28 },
+            { x: 10, z: -5, s: 0.3 }
         ];
 
         rockPositions.forEach(pos => {
@@ -444,6 +507,19 @@ export default class StarterVillage {
             rock.userData = { type: 'rock', entity: { name: '岩石' } };
             this.scene.add(rock);
             this.decorations.push(rock);
+        });
+
+        // 创建小石头
+        smallStonePositions.forEach(pos => {
+            const geometry = new THREE.DodecahedronGeometry(pos.s);
+            const material = new THREE.MeshLambertMaterial({ color: 0x787878 });
+            const stone = new THREE.Mesh(geometry, material);
+            stone.position.set(pos.x, pos.s * 0.5, pos.z);
+            stone.rotation.set(Math.random(), Math.random(), Math.random());
+            stone.castShadow = true;
+            stone.userData = { type: 'rock', entity: { name: '石头' } };
+            this.scene.add(stone);
+            this.decorations.push(stone);
         });
     }
 
