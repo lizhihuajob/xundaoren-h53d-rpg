@@ -466,6 +466,27 @@ class Game {
                 this.buildingCollisionTimer = Date.now();
             }
         }
+
+        // 篱笆碰撞检测
+        const fenceCollision = this.world.checkFenceCollision(this.player.position);
+        if (fenceCollision) {
+            const resolvedPosition = this.world.resolveFenceCollision(this.player.position, fenceCollision);
+            this.player.position.x = resolvedPosition.x;
+            this.player.position.z = resolvedPosition.z;
+            
+            if (this.player.mesh) {
+                this.player.mesh.position.x = this.player.position.x;
+                this.player.mesh.position.z = this.player.position.z;
+            }
+
+            if (!this.fenceCollisionTimer || Date.now() - this.fenceCollisionTimer > 2000) {
+                const screenPos = this.renderer.worldToScreen(this.player.mesh.position);
+                if (screenPos) {
+                    this.ui.showPopupAtPosition(screenPos.x, screenPos.y - 80, '请从大门进出村庄', 'warning');
+                }
+                this.fenceCollisionTimer = Date.now();
+            }
+        }
         
         // 更新相机
         this.renderer.updateCamera(this.player.mesh.position);
