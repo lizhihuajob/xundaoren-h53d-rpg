@@ -2,8 +2,8 @@
 
 services:
   xundaoren-h5-rpg:
-    container_name: glm-xundaoren-h5-rpg
+    container_name: seed-xundaoren-h5-rpg
     build: ./frontend
     ports:
-      - "3052:80"
+      - "3051:80"
     restart: unless-stopped
