@@ -187,7 +187,59 @@ export default class Monster {
             return;
         }
         
-        this.moveTowards(player.position, deltaTime, this.speed);
+        // 计算下一步位置
+        const nextPosition = this.calculateNextPosition(player.position, deltaTime, this.speed);
+        
+        // 检查是否会进入村庄（篱笆内部）
+        if (this.isPositionInsideVillage(nextPosition)) {
+            // 如果会进入村庄，则停止追击，改为返回
+            this.state = 'return';
+            return;
+        }
+        
+        this.position.x = nextPosition.x;
+        this.position.z = nextPosition.z;
+        
+        // 更新朝向
+        const dx = player.position.x - this.position.x;
+        const dz = player.position.z - this.position.z;
+        this.rotation = Math.atan2(dx, dz);
+    }
+
+    /**
+     * 检查位置是否在村庄内部（篱笆内）
+     * 村庄边界：minX: -26, maxX: 0, minZ: 6, maxZ: 24
+     */
+    isPositionInsideVillage(position) {
+        const villageBounds = {
+            minX: -26,
+            maxX: 0,
+            minZ: 6,
+            maxZ: 24
+        };
+        
+        return position.x >= villageBounds.minX && position.x <= villageBounds.maxX &&
+               position.z >= villageBounds.minZ && position.z <= villageBounds.maxZ;
+    }
+
+    /**
+     * 计算下一步位置
+     */
+    calculateNextPosition(target, deltaTime, speed) {
+        const dx = target.x - this.position.x;
+        const dz = target.z - this.position.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+        
+        let newX = this.position.x;
+        let newZ = this.position.z;
+        
+        if (distance > 0) {
+            const moveAmount = speed * deltaTime * 2;
+            newX += (dx / distance) * moveAmount;
+            newZ += (dz / distance) * moveAmount;
+        }
+        
+        return { x: newX, z: newZ };
     }
 
     /**

@@ -432,8 +432,43 @@ class Game {
         // 保存移动前的位置
         const previousPosition = { ...this.player.position };
         
-        // 更新玩家
-        this.player.update(deltaTime, direction);
+        // 计算下一步位置（用于预判碰撞）
+        const moveSpeed = this.player.speed * deltaTime * 5;
+        const nextPosition = {
+            x: this.player.position.x + direction.x * moveSpeed,
+            z: this.player.position.z + direction.z * moveSpeed
+        };
+        
+        // 预判篱笆碰撞 - 在移动前检查下一步是否会撞到篱笆
+        const fenceCollision = this.world.checkFenceCollision(nextPosition);
+        let isFenceBlocked = false;
+        if (fenceCollision) {
+            isFenceBlocked = true;
+            // 显示提示（限制频率，避免闪烁）
+            if (!this.fenceCollisionTimer || Date.now() - this.fenceCollisionTimer > 2000) {
+                const screenPos = this.renderer.worldToScreen(this.player.mesh.position);
+                if (screenPos) {
+                    this.ui.showPopupAtPosition(screenPos.x, screenPos.y - 80, '请从大门进出村庄', 'warning');
+                }
+                this.fenceCollisionTimer = Date.now();
+            }
+        }
+        
+        // 如果会被篱笆阻挡，则只更新朝向但不移动
+        if (isFenceBlocked) {
+            // 只更新朝向
+            if (direction.x !== 0 || direction.z !== 0) {
+                this.player.rotation = Math.atan2(direction.x, direction.z);
+                this.player.isMoving = false;
+            }
+            // 更新3D对象（只更新旋转）
+            if (this.player.mesh) {
+                this.player.mesh.rotation.y = this.player.rotation;
+            }
+        } else {
+            // 正常更新玩家位置
+            this.player.update(deltaTime, direction);
+        }
         
         // 边界限制
         this.player.clampPosition(
@@ -464,27 +499,6 @@ class Game {
                     this.ui.showPopupAtPosition(screenPos.x, screenPos.y - 80, `${collision.name}挡路了，请绕行`, 'warning');
                 }
                 this.buildingCollisionTimer = Date.now();
-            }
-        }
-
-        // 篱笆碰撞检测
-        const fenceCollision = this.world.checkFenceCollision(this.player.position);
-        if (fenceCollision) {
-            const resolvedPosition = this.world.resolveFenceCollision(this.player.position, fenceCollision);
-            this.player.position.x = resolvedPosition.x;
-            this.player.position.z = resolvedPosition.z;
-            
-            if (this.player.mesh) {
-                this.player.mesh.position.x = this.player.position.x;
-                this.player.mesh.position.z = this.player.position.z;
-            }
-
-            if (!this.fenceCollisionTimer || Date.now() - this.fenceCollisionTimer > 2000) {
-                const screenPos = this.renderer.worldToScreen(this.player.mesh.position);
-                if (screenPos) {
-                    this.ui.showPopupAtPosition(screenPos.x, screenPos.y - 80, '请从大门进出村庄', 'warning');
-                }
-                this.fenceCollisionTimer = Date.now();
             }
         }
         
