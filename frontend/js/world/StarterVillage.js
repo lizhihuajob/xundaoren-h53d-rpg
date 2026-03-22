@@ -36,10 +36,17 @@ export default class StarterVillage {
             ]},
             { monsterId: 'woodSpirit', positions: [
                 { x: 20, y: 0, z: -20 },
-                { x: 22, y: 0, z: -18 }
+                { x: 22, y: 0, z: -18 },
+                { x: 12, y: 0, z: 15 },
+                { x: 15, y: 0, z: 12 }
             ]},
             { monsterId: 'stoneGolem', positions: [
                 { x: 0, y: 0, z: -22 }
+            ]},
+            { monsterId: 'rabbitDemon', positions: [
+                { x: 10, y: 0, z: 20 },
+                { x: 14, y: 0, z: 18 },
+                { x: 18, y: 0, z: 22 }
             ]}
         ];
     }
@@ -649,7 +656,16 @@ export default class StarterVillage {
             { x: -6, z: -22 },
             { x: 6, z: -22 },
             { x: -8, z: -20 },
-            { x: 8, z: -20 }
+            { x: 8, z: -20 },
+            // 村庄东面空地树木
+            { x: 8, z: 10 },
+            { x: 12, z: 8 },
+            { x: 16, z: 12 },
+            { x: 10, z: 16 },
+            { x: 18, z: 18 },
+            { x: 22, z: 14 },
+            { x: 14, z: 22 },
+            { x: 20, z: 24 }
         ];
 
         treePositions.forEach((pos, index) => {
@@ -707,7 +723,16 @@ export default class StarterVillage {
             { x: -2, z: -22, s: 1.5 },
             { x: 2, z: -24, s: 1 },
             { x: -5, z: -18, s: 0.8 },
-            { x: 8, z: -22, s: 1.3 }
+            { x: 8, z: -22, s: 1.3 },
+            // 村庄东面空地岩石
+            { x: 6, z: 8, s: 0.7 },
+            { x: 10, z: 12, s: 0.9 },
+            { x: 15, z: 6, s: 0.6 },
+            { x: 20, z: 10, s: 1.0 },
+            { x: 8, z: 20, s: 0.8 },
+            { x: 16, z: 16, s: 0.7 },
+            { x: 22, z: 20, s: 1.1 },
+            { x: 12, z: 24, s: 0.9 }
         ];
 
         rockPositions.forEach(pos => {
@@ -797,9 +822,16 @@ export default class StarterVillage {
      * 创建怪物
      */
     createMonsters() {
+        const villageForbiddenZone = this.fenceBounds || {
+            minX: -26,
+            maxX: 0,
+            minZ: 6,
+            maxZ: 24
+        };
+        
         this.monsterSpawns.forEach(spawn => {
             spawn.positions.forEach(pos => {
-                const monster = new Monster(spawn.monsterId, pos);
+                const monster = new Monster(spawn.monsterId, pos, villageForbiddenZone);
                 const mesh = monster.createMesh();
                 
                 this.scene.add(mesh);
@@ -981,6 +1013,9 @@ export default class StarterVillage {
         const gateCenterZ = (fb.minZ + fb.maxZ) / 2;
         const gateHalfWidth = 1.5;
 
+        const insideVillage = position.x >= fb.minX && position.x <= fb.maxX &&
+                              position.z >= fb.minZ && position.z <= fb.maxZ;
+
         const nearLeftFence = position.x >= fb.minX - playerRadius && position.x <= fb.minX + playerRadius;
         const nearRightFence = position.x >= fb.maxX - playerRadius && position.x <= fb.maxX + playerRadius;
         const nearBottomFence = position.z >= fb.minZ - playerRadius && position.z <= fb.minZ + playerRadius;
@@ -993,7 +1028,8 @@ export default class StarterVillage {
             return {
                 name: '篱笆',
                 type: 'left',
-                fenceX: fb.minX
+                fenceX: fb.minX,
+                insideVillage: insideVillage
             };
         }
 
@@ -1004,7 +1040,8 @@ export default class StarterVillage {
                 return {
                     name: '篱笆',
                     type: 'right',
-                    fenceX: fb.maxX
+                    fenceX: fb.maxX,
+                    insideVillage: insideVillage
                 };
             }
         }
@@ -1013,7 +1050,8 @@ export default class StarterVillage {
             return {
                 name: '篱笆',
                 type: 'bottom',
-                fenceZ: fb.minZ
+                fenceZ: fb.minZ,
+                insideVillage: insideVillage
             };
         }
 
@@ -1021,7 +1059,8 @@ export default class StarterVillage {
             return {
                 name: '篱笆',
                 type: 'top',
-                fenceZ: fb.maxZ
+                fenceZ: fb.maxZ,
+                insideVillage: insideVillage
             };
         }
 
@@ -1034,20 +1073,36 @@ export default class StarterVillage {
      */
     resolveFenceCollision(position, collision) {
         const newPosition = { ...position };
-        const margin = 0.3;
+        const margin = 0.5;
 
         switch (collision.type) {
             case 'left':
-                newPosition.x = collision.fenceX - margin;
+                if (collision.insideVillage) {
+                    newPosition.x = collision.fenceX + margin;
+                } else {
+                    newPosition.x = collision.fenceX - margin;
+                }
                 break;
             case 'right':
-                newPosition.x = collision.fenceX + margin;
+                if (collision.insideVillage) {
+                    newPosition.x = collision.fenceX - margin;
+                } else {
+                    newPosition.x = collision.fenceX + margin;
+                }
                 break;
             case 'bottom':
-                newPosition.z = collision.fenceZ - margin;
+                if (collision.insideVillage) {
+                    newPosition.z = collision.fenceZ + margin;
+                } else {
+                    newPosition.z = collision.fenceZ - margin;
+                }
                 break;
             case 'top':
-                newPosition.z = collision.fenceZ + margin;
+                if (collision.insideVillage) {
+                    newPosition.z = collision.fenceZ - margin;
+                } else {
+                    newPosition.z = collision.fenceZ + margin;
+                }
                 break;
         }
 

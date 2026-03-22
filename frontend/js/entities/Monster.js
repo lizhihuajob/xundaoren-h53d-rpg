@@ -6,7 +6,7 @@
 import { getMonster } from '../data/monsters.js';
 
 export default class Monster {
-    constructor(monsterId, position = { x: 0, y: 0, z: 0 }) {
+    constructor(monsterId, position = { x: 0, y: 0, z: 0 }, forbiddenZone = null) {
         const config = getMonster(monsterId);
         if (!config) {
             throw new Error(`Unknown monster: ${monsterId}`);
@@ -45,6 +45,12 @@ export default class Monster {
         this.patrolRadius = 5;
         this.patrolTimer = 0;
         this.patrolInterval = 3000 + Math.random() * 2000;
+        
+        // 活动范围限制
+        this.maxChaseDistance = this.aggroRange * 2.5;
+        
+        // 禁止进入的区域（村庄）
+        this.forbiddenZone = forbiddenZone;
         
         // 3D对象
         this.mesh = null;
@@ -94,10 +100,10 @@ export default class Monster {
         
         switch (this.state) {
             case 'idle':
-                this.updateIdle(deltaTime, distanceToPlayer);
+                this.updateIdle(deltaTime, distanceToPlayer, player);
                 break;
             case 'patrol':
-                this.updatePatrol(deltaTime, distanceToPlayer);
+                this.updatePatrol(deltaTime, distanceToPlayer, player);
                 break;
             case 'chase':
                 this.updateChase(deltaTime, player, distanceToPlayer, distanceToSpawn);
@@ -121,16 +127,14 @@ export default class Monster {
     /**
      * 空闲状态
      */
-    updateIdle(deltaTime, distanceToPlayer) {
+    updateIdle(deltaTime, distanceToPlayer, player) {
         this.patrolTimer += deltaTime * 1000;
         
-        // 检测玩家
-        if (distanceToPlayer <= this.aggroRange) {
+        if (distanceToPlayer <= this.aggroRange && !this.isPlayerInForbiddenZone(player)) {
             this.state = 'chase';
             return;
         }
         
-        // 开始巡逻
         if (this.patrolTimer >= this.patrolInterval) {
             this.patrolTimer = 0;
             this.setRandomPatrolTarget();
@@ -141,9 +145,8 @@ export default class Monster {
     /**
      * 巡逻状态
      */
-    updatePatrol(deltaTime, distanceToPlayer) {
-        // 检测玩家
-        if (distanceToPlayer <= this.aggroRange) {
+    updatePatrol(deltaTime, distanceToPlayer, player) {
+        if (distanceToPlayer <= this.aggroRange && !this.isPlayerInForbiddenZone(player)) {
             this.state = 'chase';
             return;
         }
@@ -168,26 +171,40 @@ export default class Monster {
      * 追击状态
      */
     updateChase(deltaTime, player, distanceToPlayer, distanceToSpawn) {
-        // 超出追击范围，返回
-        if (distanceToSpawn > this.aggroRange * 3) {
+        if (distanceToSpawn > this.maxChaseDistance) {
             this.state = 'return';
             return;
         }
         
-        // 到达攻击范围
+        if (this.isPlayerInForbiddenZone(player)) {
+            this.state = 'return';
+            return;
+        }
+        
         if (distanceToPlayer <= this.attackRange) {
             this.state = 'attack';
             this.target = player;
             return;
         }
         
-        // 丢失目标
         if (distanceToPlayer > this.aggroRange * 2) {
             this.state = 'return';
             return;
         }
         
         this.moveTowards(player.position, deltaTime, this.speed);
+    }
+
+    /**
+     * 检查玩家是否在禁区内
+     */
+    isPlayerInForbiddenZone(player) {
+        if (!this.forbiddenZone || !player || !player.position) return false;
+        
+        const fz = this.forbiddenZone;
+        const px = player.position.x;
+        const pz = player.position.z;
+        return px >= fz.minX && px <= fz.maxX && pz >= fz.minZ && pz <= fz.maxZ;
     }
 
     /**
@@ -238,10 +255,38 @@ export default class Monster {
         
         if (distance > 0) {
             const moveAmount = speed * deltaTime * 2;
-            this.position.x += (dx / distance) * moveAmount;
-            this.position.z += (dz / distance) * moveAmount;
+            const newX = this.position.x + (dx / distance) * moveAmount;
+            const newZ = this.position.z + (dz / distance) * moveAmount;
+            
+            const distToSpawn = Math.sqrt(
+                (newX - this.spawnPosition.x) ** 2 + 
+                (newZ - this.spawnPosition.z) ** 2
+            );
+            
+            if (distToSpawn > this.maxChaseDistance) {
+                this.state = 'return';
+                return;
+            }
+            
+            if (this.isInForbiddenZone(newX, newZ)) {
+                this.state = 'return';
+                return;
+            }
+            
+            this.position.x = newX;
+            this.position.z = newZ;
             this.rotation = Math.atan2(dx, dz);
         }
+    }
+
+    /**
+     * 检查位置是否在禁区内
+     */
+    isInForbiddenZone(x, z) {
+        if (!this.forbiddenZone) return false;
+        
+        const fz = this.forbiddenZone;
+        return x >= fz.minX && x <= fz.maxX && z >= fz.minZ && z <= fz.maxZ;
     }
 
     /**
