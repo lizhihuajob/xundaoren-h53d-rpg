@@ -40,6 +40,16 @@ export default class StarterVillage {
             ]},
             { monsterId: 'stoneGolem', positions: [
                 { x: 0, y: 0, z: -22 }
+            ]},
+            // 村庄东面空地的野怪
+            { monsterId: 'rabbitDemon', positions: [
+                { x: 8, y: 0, z: 10 },
+                { x: 12, y: 0, z: 12 },
+                { x: 10, y: 0, z: 8 }
+            ]},
+            { monsterId: 'woodSpirit', positions: [
+                { x: 15, y: 0, z: 15 },
+                { x: 18, y: 0, z: 10 }
             ]}
         ];
     }
@@ -649,7 +659,16 @@ export default class StarterVillage {
             { x: -6, z: -22 },
             { x: 6, z: -22 },
             { x: -8, z: -20 },
-            { x: 8, z: -20 }
+            { x: 8, z: -20 },
+            // 村庄东面空地的树木
+            { x: 6, z: 6 },
+            { x: 10, z: 5 },
+            { x: 14, z: 8 },
+            { x: 18, z: 6 },
+            { x: 8, z: 14 },
+            { x: 12, z: 18 },
+            { x: 16, z: 12 },
+            { x: 20, z: 16 }
         ];
 
         treePositions.forEach((pos, index) => {
@@ -707,7 +726,14 @@ export default class StarterVillage {
             { x: -2, z: -22, s: 1.5 },
             { x: 2, z: -24, s: 1 },
             { x: -5, z: -18, s: 0.8 },
-            { x: 8, z: -22, s: 1.3 }
+            { x: 8, z: -22, s: 1.3 },
+            // 村庄东面空地的岩石
+            { x: 5, z: 8, s: 0.7 },
+            { x: 9, z: 12, s: 0.9 },
+            { x: 13, z: 6, s: 0.6 },
+            { x: 17, z: 14, s: 1.0 },
+            { x: 21, z: 8, s: 0.8 },
+            { x: 7, z: 16, s: 0.5 }
         ];
 
         rockPositions.forEach(pos => {
@@ -973,6 +999,7 @@ export default class StarterVillage {
     /**
      * 检查与篱笆的碰撞
      * 返回碰撞信息，如果没有碰撞则返回null
+     * 严格检测：玩家完全不能穿过篱笆，只能从大门通过
      */
     checkFenceCollision(position, playerRadius = 0.5) {
         if (!this.fenceBounds) return null;
@@ -980,48 +1007,67 @@ export default class StarterVillage {
         const fb = this.fenceBounds;
         const gateCenterZ = (fb.minZ + fb.maxZ) / 2;
         const gateHalfWidth = 1.5;
+        
+        // 玩家碰撞盒
+        const playerMinX = position.x - playerRadius;
+        const playerMaxX = position.x + playerRadius;
+        const playerMinZ = position.z - playerRadius;
+        const playerMaxZ = position.z + playerRadius;
 
-        const nearLeftFence = position.x >= fb.minX - playerRadius && position.x <= fb.minX + playerRadius;
-        const nearRightFence = position.x >= fb.maxX - playerRadius && position.x <= fb.maxX + playerRadius;
-        const nearBottomFence = position.z >= fb.minZ - playerRadius && position.z <= fb.minZ + playerRadius;
-        const nearTopFence = position.z >= fb.maxZ - playerRadius && position.z <= fb.maxZ + playerRadius;
+        // 判断玩家当前是在篱笆内部还是外部
+        const isInsideVillage = position.x >= fb.minX && position.x <= fb.maxX &&
+                                position.z >= fb.minZ && position.z <= fb.maxZ;
 
-        const inZRange = position.z >= fb.minZ - playerRadius && position.z <= fb.maxZ + playerRadius;
-        const inXRange = position.x >= fb.minX - playerRadius && position.x <= fb.maxX + playerRadius;
-
-        if (nearLeftFence && inZRange) {
+        // 左边篱笆（西侧）- 严格检测玩家碰撞盒是否与篱笆边界重叠
+        if (playerMaxX >= fb.minX && playerMinX <= fb.minX &&
+            playerMaxZ >= fb.minZ && playerMinZ <= fb.maxZ) {
             return {
                 name: '篱笆',
                 type: 'left',
-                fenceX: fb.minX
+                fenceX: fb.minX,
+                isInsideVillage: isInsideVillage,
+                pushDirection: isInsideVillage ? -1 : 1  // -1向左推，1向右推
             };
         }
 
-        if (nearRightFence && inZRange) {
-            const isAtGate = position.z >= gateCenterZ - gateHalfWidth && 
-                            position.z <= gateCenterZ + gateHalfWidth;
+        // 右边篱笆（东侧，有大门）
+        if (playerMinX <= fb.maxX && playerMaxX >= fb.maxX &&
+            playerMaxZ >= fb.minZ && playerMinZ <= fb.maxZ) {
+            // 检查是否在大门位置（给大门更宽的范围）
+            const isAtGate = position.z >= gateCenterZ - gateHalfWidth - playerRadius && 
+                            position.z <= gateCenterZ + gateHalfWidth + playerRadius;
             if (!isAtGate) {
                 return {
                     name: '篱笆',
                     type: 'right',
-                    fenceX: fb.maxX
+                    fenceX: fb.maxX,
+                    isInsideVillage: isInsideVillage,
+                    pushDirection: isInsideVillage ? 1 : -1
                 };
             }
         }
 
-        if (nearBottomFence && inXRange) {
+        // 下边篱笆（南侧）
+        if (playerMaxZ >= fb.minZ && playerMinZ <= fb.minZ &&
+            playerMaxX >= fb.minX && playerMinX <= fb.maxX) {
             return {
                 name: '篱笆',
                 type: 'bottom',
-                fenceZ: fb.minZ
+                fenceZ: fb.minZ,
+                isInsideVillage: isInsideVillage,
+                pushDirection: isInsideVillage ? -1 : 1
             };
         }
 
-        if (nearTopFence && inXRange) {
+        // 上边篱笆（北侧）
+        if (playerMinZ <= fb.maxZ && playerMaxZ >= fb.maxZ &&
+            playerMaxX >= fb.minX && playerMinX <= fb.maxX) {
             return {
                 name: '篱笆',
                 type: 'top',
-                fenceZ: fb.maxZ
+                fenceZ: fb.maxZ,
+                isInsideVillage: isInsideVillage,
+                pushDirection: isInsideVillage ? 1 : -1
             };
         }
 
@@ -1031,23 +1077,37 @@ export default class StarterVillage {
     /**
      * 将位置推出篱笆
      * 返回修正后的位置
+     * 使用严格的边界限制，确保玩家无法穿过
      */
     resolveFenceCollision(position, collision) {
         const newPosition = { ...position };
-        const margin = 0.3;
+        const playerRadius = 0.5;
+        const safetyMargin = 0.05; // 额外的安全边距
 
         switch (collision.type) {
             case 'left':
-                newPosition.x = collision.fenceX - margin;
+                // 左边篱笆：根据pushDirection决定推出方向
+                newPosition.x = collision.pushDirection < 0 ? 
+                    collision.fenceX - playerRadius - safetyMargin : 
+                    collision.fenceX + playerRadius + safetyMargin;
                 break;
             case 'right':
-                newPosition.x = collision.fenceX + margin;
+                // 右边篱笆
+                newPosition.x = collision.pushDirection > 0 ? 
+                    collision.fenceX + playerRadius + safetyMargin : 
+                    collision.fenceX - playerRadius - safetyMargin;
                 break;
             case 'bottom':
-                newPosition.z = collision.fenceZ - margin;
+                // 下边篱笆（南侧）
+                newPosition.z = collision.pushDirection < 0 ? 
+                    collision.fenceZ - playerRadius - safetyMargin : 
+                    collision.fenceZ + playerRadius + safetyMargin;
                 break;
             case 'top':
-                newPosition.z = collision.fenceZ + margin;
+                // 上边篱笆（北侧）
+                newPosition.z = collision.pushDirection > 0 ? 
+                    collision.fenceZ + playerRadius + safetyMargin : 
+                    collision.fenceZ - playerRadius - safetyMargin;
                 break;
         }
 
