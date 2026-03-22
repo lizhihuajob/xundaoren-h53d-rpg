@@ -19,6 +19,19 @@ export default class StarterVillage {
             maxZ: this.height / 2
         };
         
+        // 村庄篱笆边界（用于碰撞检测）- 紧贴医馆(-22, 12)、铁匠铺(-16, 12)、修炼场(-8, 12)
+        // 广场范围：x从-26到-2，z从6到22
+        this.villageBounds = {
+            minX: -25,   // 向西到-25（地图边界），紧贴广场西侧
+            maxX: 0,     // 向东到0，大门位置向东移
+            minZ: 5,     // 向南紧贴广场南侧
+            maxZ: 22     // 向北到22，更紧凑
+        };
+        
+        // 大门位置（用于碰撞检测时允许通过）
+        this.gatePosition = { x: 0, z: 13.5 };
+        this.gateWidth = 4;
+        
         // 场景对象
         this.ground = null;
         this.walls = [];
@@ -157,7 +170,63 @@ export default class StarterVillage {
     }
 
     createWalls() {
+        // 创建外围地图围墙
+        this.createOuterWalls();
+        // 创建村庄内部篱笆
         this.createVillageFence();
+    }
+
+    /**
+     * 创建外围地图围墙
+     */
+    createOuterWalls() {
+        const wallHeight = 3;
+        const wallThickness = 1;
+        const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x5a5a5a });
+
+        // 北墙
+        const northWall = new THREE.Mesh(
+            new THREE.BoxGeometry(this.width + wallThickness * 2, wallHeight, wallThickness),
+            wallMaterial
+        );
+        northWall.position.set(0, wallHeight / 2, this.bounds.minZ - wallThickness / 2);
+        northWall.castShadow = true;
+        northWall.receiveShadow = true;
+        this.scene.add(northWall);
+        this.walls.push(northWall);
+
+        // 南墙
+        const southWall = new THREE.Mesh(
+            new THREE.BoxGeometry(this.width + wallThickness * 2, wallHeight, wallThickness),
+            wallMaterial
+        );
+        southWall.position.set(0, wallHeight / 2, this.bounds.maxZ + wallThickness / 2);
+        southWall.castShadow = true;
+        southWall.receiveShadow = true;
+        this.scene.add(southWall);
+        this.walls.push(southWall);
+
+        // 东墙
+        const eastWall = new THREE.Mesh(
+            new THREE.BoxGeometry(wallThickness, wallHeight, this.height),
+            wallMaterial
+        );
+        eastWall.position.set(this.bounds.maxX + wallThickness / 2, wallHeight / 2, 0);
+        eastWall.castShadow = true;
+        eastWall.receiveShadow = true;
+        this.scene.add(eastWall);
+        this.walls.push(eastWall);
+
+        // 西墙
+        const westWall = new THREE.Mesh(
+            new THREE.BoxGeometry(wallThickness, wallHeight, this.height),
+            wallMaterial
+        );
+        westWall.position.set(this.bounds.minX - wallThickness / 2, wallHeight / 2, 0);
+        westWall.castShadow = true;
+        westWall.receiveShadow = true;
+        this.scene.add(westWall);
+        this.walls.push(westWall);
     }
 
     createVillageFence() {
@@ -167,18 +236,11 @@ export default class StarterVillage {
         const railThickness = 0.08;
         const gapBetweenPosts = 1.5;
 
-        const villageBounds = {
-            minX: -28,
-            maxX: 2,
-            minZ: 5,
-            maxZ: 25
-        };
-
-        const gateWidth = 4;
+        // 使用类中定义的篱笆边界（保持与碰撞检测一致）
+        const villageBounds = this.villageBounds;
+        const gateWidth = this.gateWidth;
         const gateCenterX = villageBounds.maxX;
-        const gateCenterZ = (villageBounds.minZ + villageBounds.maxZ) / 2;
-
-        this.gatePosition = { x: gateCenterX + 1, z: gateCenterZ };
+        const gateCenterZ = this.gatePosition.z;
 
         const fenceMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
         const postMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
@@ -217,8 +279,8 @@ export default class StarterVillage {
                 const z = startZ + (endZ - startZ) * t;
 
                 if (skipGate) {
-                    const pos = i === 0 || i === numPosts ? 0 : (startZ + (endZ - startZ) * (i / numPosts));
-                    if (pos >= gateStart && pos <= gateEnd) {
+                    // 检查当前位置是否在大门范围内
+                    if (z >= gateStart && z <= gateEnd) {
                         continue;
                     }
                 }
@@ -227,9 +289,11 @@ export default class StarterVillage {
             }
 
             for (let i = 0; i < posts.length - 1; i++) {
+                // 检查两个相邻的桩子之间是否跨越大门区域，如果是则跳过横杆
                 const skipThis = skipGate && 
-                    posts[i].z >= gateStart && posts[i].z <= gateEnd &&
-                    posts[i + 1].z >= gateStart && posts[i + 1].z <= gateEnd;
+                    ((posts[i].z >= gateStart && posts[i].z <= gateEnd) ||
+                     (posts[i + 1].z >= gateStart && posts[i + 1].z <= gateEnd) ||
+                     (posts[i].z < gateStart && posts[i + 1].z > gateEnd));
                 
                 if (!skipThis) {
                     createFenceRail(posts[i].x, posts[i].z, posts[i + 1].x, posts[i + 1].z, railHeight);
@@ -285,41 +349,47 @@ export default class StarterVillage {
     }
 
     createGateSign(x, z, signHeight) {
+        // 增加canvas分辨率提高文字清晰度
         const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 64;
+        canvas.width = 512;
+        canvas.height = 128;
         const ctx = canvas.getContext('2d');
 
+        // 背景
         ctx.fillStyle = '#8b4513';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // 绘制边框
+        ctx.strokeStyle = '#654321';
+        ctx.lineWidth = 8;
+        ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
+
+        // 绘制文字 - 使用描边增加清晰度
         ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 36px serif';
+        ctx.font = 'bold 72px Arial';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
+        // 添加文字描边
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 4;
+        ctx.strokeText('新手村', canvas.width / 2, canvas.height / 2);
         ctx.fillText('新手村', canvas.width / 2, canvas.height / 2);
 
-        ctx.strokeStyle = '#654321';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
-
         const texture = new THREE.CanvasTexture(canvas);
-        const signGeometry = new THREE.PlaneGeometry(2.5, 0.6);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        
+        const signGeometry = new THREE.PlaneGeometry(3, 0.75);
         const signMaterial = new THREE.MeshBasicMaterial({ 
             map: texture,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            transparent: true
         });
         const sign = new THREE.Mesh(signGeometry, signMaterial);
-        sign.position.set(x + 0.2, signHeight + 0.4, z);
+        sign.position.set(x, signHeight + 0.4, z);
         sign.rotation.y = Math.PI / 2;
         this.scene.add(sign);
         this.walls.push(sign);
-
-        const signBack = new THREE.Mesh(signGeometry, signMaterial);
-        signBack.position.set(x - 0.2, signHeight + 0.4, z);
-        signBack.rotation.y = -Math.PI / 2;
-        this.scene.add(signBack);
-        this.walls.push(signBack);
     }
 
     /**
@@ -340,27 +410,15 @@ export default class StarterVillage {
     }
 
     createTrainingGround() {
-        const config = { name: '修炼场', x: -8, z: 12, radius: 3, color: 0x4169e1 };
+        // 修炼场改为方形平面，类似广场的设计
+        const config = { name: '修炼场', x: -8, z: 12, width: 10, depth: 10, color: 0x4169e1 };
         
-        const shape = new THREE.Shape();
-        const sides = 5;
-        for (let i = 0; i <= sides; i++) {
-            const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
-            const px = Math.cos(angle) * config.radius;
-            const py = Math.sin(angle) * config.radius;
-            if (i === 0) {
-                shape.moveTo(px, py);
-            } else {
-                shape.lineTo(px, py);
-            }
-        }
-        
-        const geometry = new THREE.ShapeGeometry(shape);
-        const material = new THREE.MeshLambertMaterial({
-            color: config.color,
-            side: THREE.DoubleSide
+        // 外层基础
+        const borderGeometry = new THREE.PlaneGeometry(config.width, config.depth);
+        const borderMaterial = new THREE.MeshLambertMaterial({
+            color: config.color
         });
-        const trainingGround = new THREE.Mesh(geometry, material);
+        const trainingGround = new THREE.Mesh(borderGeometry, borderMaterial);
         trainingGround.rotation.x = -Math.PI / 2;
         trainingGround.position.set(config.x, 0.02, config.z);
         trainingGround.receiveShadow = true;
@@ -368,23 +426,12 @@ export default class StarterVillage {
         this.scene.add(trainingGround);
         this.buildings.push(trainingGround);
 
-        const innerRadius = config.radius * 0.7;
-        const innerShape = new THREE.Shape();
-        for (let i = 0; i <= sides; i++) {
-            const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
-            const px = Math.cos(angle) * innerRadius;
-            const py = Math.sin(angle) * innerRadius;
-            if (i === 0) {
-                innerShape.moveTo(px, py);
-            } else {
-                innerShape.lineTo(px, py);
-            }
-        }
-        
-        const innerGeometry = new THREE.ShapeGeometry(innerShape);
+        // 内部区域（稍小一些，形成边框效果
+        const innerWidth = config.width * 0.85;
+        const innerDepth = config.depth * 0.85;
+        const innerGeometry = new THREE.PlaneGeometry(innerWidth, innerDepth);
         const innerMaterial = new THREE.MeshLambertMaterial({
-            color: 0x6495ed,
-            side: THREE.DoubleSide
+            color: 0x6495ed
         });
         const innerGround = new THREE.Mesh(innerGeometry, innerMaterial);
         innerGround.rotation.x = -Math.PI / 2;
@@ -392,6 +439,57 @@ export default class StarterVillage {
         innerGround.receiveShadow = true;
         this.scene.add(innerGround);
         this.buildings.push(innerGround);
+
+        // 添加装饰性边框线条 - 类似广场的纹路
+        const lineColor2 = 0x1e90ff;
+        const lineThickness = 0.2;
+        const innerHalfW = innerWidth / 2;
+        const innerHalfD = innerDepth / 2;
+        
+        // 创建装饰线条函数
+        const createLine = (w, d, color) => {
+            const lineGeo = new THREE.BoxGeometry(w, 0.05, d);
+            const line = new THREE.Mesh(lineGeo, new THREE.MeshLambertMaterial({ color }));
+            return line;
+        };
+        
+        // 四周装饰线
+        // 横线（上下两条
+        const hLine1 = createLine(config.width - 1, lineThickness, lineColor2);
+        hLine1.rotation.x = -Math.PI / 2;
+        hLine1.position.set(config.x, 0.03, config.z + innerHalfD + lineThickness / 2);
+        this.scene.add(hLine1);
+        
+        const hLine2 = createLine(config.width - 1, lineThickness, lineColor2);
+        hLine2.rotation.x = -Math.PI / 2;
+        hLine2.position.set(config.x, 0.03, config.z - innerHalfD - lineThickness / 2);
+        this.scene.add(hLine2);
+        
+        // 竖线（左右两条
+        const vLine1 = createLine(lineThickness, config.depth - 1, lineColor2);
+        vLine1.rotation.x = -Math.PI / 2;
+        vLine1.position.set(config.x + innerHalfW + lineThickness / 2, 0.03, config.z);
+        this.scene.add(vLine1);
+        
+        const vLine2 = createLine(lineThickness, config.depth - 1, lineColor2);
+        vLine2.rotation.x = -Math.PI / 2;
+        vLine2.position.set(config.x - innerHalfW - lineThickness / 2, 0.03, config.z);
+        this.scene.add(vLine2);
+
+        // 内部装饰 - 添加一些装饰纹路
+        const decorColor = 0x4169e1;
+        const decorLineThickness = 0.15;
+        
+        // 中心十字
+        const centerCrossH = createLine(innerWidth * 0.6, decorLineThickness, decorColor);
+        centerCrossH.rotation.x = -Math.PI / 2;
+        centerCrossH.position.set(config.x, 0.035, config.z);
+        this.scene.add(centerCrossH);
+        
+        const centerCrossV = createLine(decorLineThickness, innerDepth * 0.6, decorColor);
+        centerCrossV.rotation.x = -Math.PI / 2;
+        centerCrossV.position.set(config.x, 0.035, config.z);
+        this.scene.add(centerCrossV);
 
         this.trainingGroundPosition = { x: config.x, z: config.z };
     }
@@ -943,6 +1041,105 @@ export default class StarterVillage {
             newPosition.z = collision.minZ - 0.1;
         } else {
             newPosition.z = collision.maxZ + 0.1;
+        }
+        
+        return newPosition;
+    }
+
+    /**
+     * 检查与村庄篱笆的碰撞
+     * 返回碰撞信息，如果没有碰撞则返回null
+     */
+    checkFenceCollision(position, playerRadius = 0.5) {
+        const bounds = this.villageBounds;
+        const gate = this.gatePosition;
+        const gateHalfWidth = this.gateWidth / 2;
+        const fenceThickness = 0.8;  // 篱笆厚度
+        
+        // 检查是否在大门范围内（允许通过）
+        const atGate = 
+            position.x >= bounds.maxX - playerRadius - 1 &&
+            position.x <= bounds.maxX + playerRadius + 1 &&
+            position.z >= gate.z - gateHalfWidth - playerRadius &&
+            position.z <= gate.z + gateHalfWidth + playerRadius;
+        
+        if (atGate) {
+            return null; // 在大门处，允许通过
+        }
+        
+        // 计算碰撞信息
+        let collision = null;
+        const fenceRange = fenceThickness + playerRadius;
+        
+        // 东侧篱笆碰撞（包括篱笆内外侧都检测
+        if (position.x >= bounds.maxX - fenceRange && position.x <= bounds.maxX + fenceRange) {
+            // 检查是否在南北边界内
+            if (position.z >= bounds.minZ && position.z <= bounds.maxZ) {
+                collision = {
+                    type: 'fence',
+                    side: 'east',
+                    boundary: bounds.maxX,
+                    message: '篱笆挡住了去路，请从大门进出'
+                };
+            }
+        }
+        // 西侧篱笆碰撞
+        else if (position.x >= bounds.minX - fenceRange && position.x <= bounds.minX + fenceRange) {
+            if (position.z >= bounds.minZ && position.z <= bounds.maxZ) {
+                collision = {
+                    type: 'fence',
+                    side: 'west',
+                    boundary: bounds.minX,
+                    message: '篱笆挡住了去路，请从大门进出'
+                };
+            }
+        }
+        // 南侧篱笆碰撞
+        else if (position.z >= bounds.maxZ - fenceRange && position.z <= bounds.maxZ + fenceRange) {
+            if (position.x >= bounds.minX && position.x <= bounds.maxX) {
+                collision = {
+                    type: 'fence',
+                    side: 'south',
+                    boundary: bounds.maxZ,
+                    message: '篱笆挡住了去路，请从大门进出'
+                };
+            }
+        }
+        // 北侧篱笆碰撞
+        else if (position.z >= bounds.minZ - fenceRange && position.z <= bounds.minZ + fenceRange) {
+            if (position.x >= bounds.minX && position.x <= bounds.maxX) {
+                collision = {
+                    type: 'fence',
+                    side: 'north',
+                    boundary: bounds.minZ,
+                    message: '篱笆挡住了去路，请从大门进出'
+                };
+            }
+        }
+        
+        return collision;
+    }
+
+    /**
+     * 解决篱笆碰撞，将位置推出篱笆
+     */
+    resolveFenceCollision(position, collision) {
+        const newPosition = { ...position };
+        const pushDistance = 0.2;
+        
+        switch (collision.side) {
+            case 'east':
+                newPosition.x = collision.boundary - pushDistance;
+                break;
+            case 'west':
+                newPosition.x = collision.boundary + pushDistance;
+                break;
+            case 'south':
+                newPosition.z = collision.boundary - pushDistance;
+                break;
+            case 'north':
+                newPosition.z = collision.boundary + pushDistance;
+                break;
         }
         
         return newPosition;
