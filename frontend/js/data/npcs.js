@@ -59,7 +59,7 @@ export const NPCS = {
         title: '技能师傅',
         color: 0x0088ff,
         size: 0.95,
-        position: { x: -8, y: 0, z: 16 },
+        position: { x: -8, y: 0, z: 12 },
         type: 'trainer',
         dialogs: {
             default: {
@@ -84,7 +84,7 @@ export const NPCS = {
         title: '村庄守卫',
         color: 0xff0000,
         size: 1.05,
-        position: { x: -12, y: 0, z: 18 },
+        position: { x: 3, y: 0, z: 15 },
         type: 'quest',
         dialogs: {
             default: {

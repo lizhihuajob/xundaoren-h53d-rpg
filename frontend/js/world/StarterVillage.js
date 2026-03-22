@@ -76,8 +76,8 @@ export default class StarterVillage {
         this.ground.receiveShadow = true;
         this.scene.add(this.ground);
         
-        // 村庄广场（棋盘格样式）- 扩大到包含医馆、铁匠铺和修炼台
-        // 建筑物位置：医馆(-22, 12)、铁匠铺(-16, 12)、修炼台(-6, 12)
+        // 村庄广场（棋盘格样式）- 扩大到包含医馆、铁匠铺和修炼场
+        // 建筑物位置：医馆(-22, 12)、铁匠铺(-16, 12)、修炼场(-8, 12)
         // 广场需要覆盖从 x=-24 到 x=-4 (宽度20)，z=8 到 z=20 (深度12)
         const plazaWidth = 24;  // 扩大到包含所有建筑物
         const plazaDepth = 16;  // 增加深度
@@ -156,33 +156,170 @@ export default class StarterVillage {
         this.scene.add(training);
     }
 
-    /**
-     * 创建围墙边界
-     */
     createWalls() {
-        const wallHeight = 3;
-        const wallThickness = 1;
-        const wallMaterial = new THREE.MeshLambertMaterial({ 
-            color: 0x5c4033 
-        });
+        this.createVillageFence();
+    }
+
+    createVillageFence() {
+        const fenceHeight = 1.5;
+        const postRadius = 0.15;
+        const railHeight = 0.6;
+        const railThickness = 0.08;
+        const gapBetweenPosts = 1.5;
+
+        const villageBounds = {
+            minX: -28,
+            maxX: 2,
+            minZ: 5,
+            maxZ: 25
+        };
+
+        const gateWidth = 4;
+        const gateCenterX = villageBounds.maxX;
+        const gateCenterZ = (villageBounds.minZ + villageBounds.maxZ) / 2;
+
+        this.gatePosition = { x: gateCenterX + 1, z: gateCenterZ };
+
+        const fenceMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+        const postMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+
+        const createFencePost = (x, z) => {
+            const postGeometry = new THREE.CylinderGeometry(postRadius, postRadius * 1.2, fenceHeight, 8);
+            const post = new THREE.Mesh(postGeometry, postMaterial);
+            post.position.set(x, fenceHeight / 2, z);
+            post.castShadow = true;
+            post.receiveShadow = true;
+            this.scene.add(post);
+            this.walls.push(post);
+            return { x, z };
+        };
+
+        const createFenceRail = (x1, z1, x2, z2, height) => {
+            const length = Math.sqrt((x2 - x1) ** 2 + (z2 - z1) ** 2);
+            const railGeometry = new THREE.BoxGeometry(length, railThickness, railThickness);
+            const rail = new THREE.Mesh(railGeometry, fenceMaterial);
+            rail.position.set((x1 + x2) / 2, height, (z1 + z2) / 2);
+            rail.rotation.y = Math.atan2(z2 - z1, x2 - x1);
+            rail.castShadow = true;
+            rail.receiveShadow = true;
+            this.scene.add(rail);
+            this.walls.push(rail);
+        };
+
+        const createFenceSection = (startX, startZ, endX, endZ, skipGate = false, gateStart = 0, gateEnd = 0) => {
+            const length = Math.sqrt((endX - startX) ** 2 + (endZ - startZ) ** 2);
+            const numPosts = Math.floor(length / gapBetweenPosts) + 1;
+            const posts = [];
+
+            for (let i = 0; i <= numPosts; i++) {
+                const t = i / numPosts;
+                const x = startX + (endX - startX) * t;
+                const z = startZ + (endZ - startZ) * t;
+
+                if (skipGate) {
+                    const pos = i === 0 || i === numPosts ? 0 : (startZ + (endZ - startZ) * (i / numPosts));
+                    if (pos >= gateStart && pos <= gateEnd) {
+                        continue;
+                    }
+                }
+
+                posts.push(createFencePost(x, z));
+            }
+
+            for (let i = 0; i < posts.length - 1; i++) {
+                const skipThis = skipGate && 
+                    posts[i].z >= gateStart && posts[i].z <= gateEnd &&
+                    posts[i + 1].z >= gateStart && posts[i + 1].z <= gateEnd;
+                
+                if (!skipThis) {
+                    createFenceRail(posts[i].x, posts[i].z, posts[i + 1].x, posts[i + 1].z, railHeight);
+                    createFenceRail(posts[i].x, posts[i].z, posts[i + 1].x, posts[i + 1].z, fenceHeight - railHeight);
+                }
+            }
+        };
+
+        createFenceSection(villageBounds.minX, villageBounds.minZ, villageBounds.maxX, villageBounds.minZ);
+        createFenceSection(villageBounds.minX, villageBounds.maxZ, villageBounds.maxX, villageBounds.maxZ);
+        createFenceSection(villageBounds.minX, villageBounds.minZ, villageBounds.minX, villageBounds.maxZ);
         
-        // 创建四面墙
-        const wallConfigs = [
-            { w: this.width, h: wallThickness, x: 0, z: -this.height/2 - wallThickness/2 }, // 北
-            { w: this.width, h: wallThickness, x: 0, z: this.height/2 + wallThickness/2 },  // 南
-            { w: wallThickness, h: this.height, x: -this.width/2 - wallThickness/2, z: 0 }, // 西
-            { w: wallThickness, h: this.height, x: this.width/2 + wallThickness/2, z: 0 }   // 东
-        ];
+        const gateStart = gateCenterZ - gateWidth / 2;
+        const gateEnd = gateCenterZ + gateWidth / 2;
+        createFenceSection(villageBounds.maxX, villageBounds.minZ, villageBounds.maxX, villageBounds.maxZ, true, gateStart, gateEnd);
+
+        this.createGate(gateCenterX, gateCenterZ, gateWidth);
+    }
+
+    createGate(x, z, width) {
+        const pillarHeight = 2.5;
+        const pillarRadius = 0.25;
+
+        const pillarMaterial = new THREE.MeshLambertMaterial({ color: 0x654321 });
+
+        const pillarGeometry = new THREE.CylinderGeometry(pillarRadius, pillarRadius * 1.3, pillarHeight, 8);
         
-        wallConfigs.forEach(config => {
-            const geometry = new THREE.BoxGeometry(config.w, wallHeight, config.h);
-            const wall = new THREE.Mesh(geometry, wallMaterial);
-            wall.position.set(config.x, wallHeight / 2, config.z);
-            wall.castShadow = true;
-            wall.receiveShadow = true;
-            this.scene.add(wall);
-            this.walls.push(wall);
+        const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+        leftPillar.position.set(x, pillarHeight / 2, z - width / 2);
+        leftPillar.castShadow = true;
+        leftPillar.receiveShadow = true;
+        this.scene.add(leftPillar);
+        this.walls.push(leftPillar);
+
+        const rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+        rightPillar.position.set(x, pillarHeight / 2, z + width / 2);
+        rightPillar.castShadow = true;
+        rightPillar.receiveShadow = true;
+        this.scene.add(rightPillar);
+        this.walls.push(rightPillar);
+
+        const archHeight = 0.4;
+        const archGeometry = new THREE.BoxGeometry(0.3, archHeight, width + pillarRadius * 2);
+        const archMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+        const arch = new THREE.Mesh(archGeometry, archMaterial);
+        arch.position.set(x, pillarHeight + archHeight / 2, z);
+        arch.castShadow = true;
+        arch.receiveShadow = true;
+        this.scene.add(arch);
+        this.walls.push(arch);
+
+        this.createGateSign(x, z, pillarHeight + archHeight);
+    }
+
+    createGateSign(x, z, signHeight) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#ffd700';
+        ctx.font = 'bold 36px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('新手村', canvas.width / 2, canvas.height / 2);
+
+        ctx.strokeStyle = '#654321';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+
+        const texture = new THREE.CanvasTexture(canvas);
+        const signGeometry = new THREE.PlaneGeometry(2.5, 0.6);
+        const signMaterial = new THREE.MeshBasicMaterial({ 
+            map: texture,
+            side: THREE.DoubleSide
         });
+        const sign = new THREE.Mesh(signGeometry, signMaterial);
+        sign.position.set(x + 0.2, signHeight + 0.4, z);
+        sign.rotation.y = Math.PI / 2;
+        this.scene.add(sign);
+        this.walls.push(sign);
+
+        const signBack = new THREE.Mesh(signGeometry, signMaterial);
+        signBack.position.set(x - 0.2, signHeight + 0.4, z);
+        signBack.rotation.y = -Math.PI / 2;
+        this.scene.add(signBack);
+        this.walls.push(signBack);
     }
 
     /**
@@ -195,22 +332,68 @@ export default class StarterVillage {
         // 创建医馆
         this.createMedicalHall();
 
-        // 创建修炼台 - 移动到医馆和铁匠铺附近并排
-        const trainingConfig = { name: '修炼台', x: -8, z: 12, w: 4, h: 2, d: 4, color: 0x4169e1 };
-        const trainingGeometry = new THREE.BoxGeometry(trainingConfig.w, trainingConfig.h, trainingConfig.d);
-        const trainingMaterial = new THREE.MeshLambertMaterial({
-            color: trainingConfig.color
-        });
-        const trainingBuilding = new THREE.Mesh(trainingGeometry, trainingMaterial);
-        trainingBuilding.position.set(trainingConfig.x, trainingConfig.h / 2, trainingConfig.z);
-        trainingBuilding.castShadow = true;
-        trainingBuilding.receiveShadow = true;
-        trainingBuilding.userData = { type: 'building', entity: { name: trainingConfig.name } };
-        this.scene.add(trainingBuilding);
-        this.buildings.push(trainingBuilding);
+        // 创建修炼场 - 五边形，高度为0（地面装饰）
+        this.createTrainingGround();
 
         // 添加一些装饰性的小物件
         this.createDecorations();
+    }
+
+    createTrainingGround() {
+        const config = { name: '修炼场', x: -8, z: 12, radius: 3, color: 0x4169e1 };
+        
+        const shape = new THREE.Shape();
+        const sides = 5;
+        for (let i = 0; i <= sides; i++) {
+            const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
+            const px = Math.cos(angle) * config.radius;
+            const py = Math.sin(angle) * config.radius;
+            if (i === 0) {
+                shape.moveTo(px, py);
+            } else {
+                shape.lineTo(px, py);
+            }
+        }
+        
+        const geometry = new THREE.ShapeGeometry(shape);
+        const material = new THREE.MeshLambertMaterial({
+            color: config.color,
+            side: THREE.DoubleSide
+        });
+        const trainingGround = new THREE.Mesh(geometry, material);
+        trainingGround.rotation.x = -Math.PI / 2;
+        trainingGround.position.set(config.x, 0.02, config.z);
+        trainingGround.receiveShadow = true;
+        trainingGround.userData = { type: 'building', entity: { name: config.name } };
+        this.scene.add(trainingGround);
+        this.buildings.push(trainingGround);
+
+        const innerRadius = config.radius * 0.7;
+        const innerShape = new THREE.Shape();
+        for (let i = 0; i <= sides; i++) {
+            const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
+            const px = Math.cos(angle) * innerRadius;
+            const py = Math.sin(angle) * innerRadius;
+            if (i === 0) {
+                innerShape.moveTo(px, py);
+            } else {
+                innerShape.lineTo(px, py);
+            }
+        }
+        
+        const innerGeometry = new THREE.ShapeGeometry(innerShape);
+        const innerMaterial = new THREE.MeshLambertMaterial({
+            color: 0x6495ed,
+            side: THREE.DoubleSide
+        });
+        const innerGround = new THREE.Mesh(innerGeometry, innerMaterial);
+        innerGround.rotation.x = -Math.PI / 2;
+        innerGround.position.set(config.x, 0.025, config.z);
+        innerGround.receiveShadow = true;
+        this.scene.add(innerGround);
+        this.buildings.push(innerGround);
+
+        this.trainingGroundPosition = { x: config.x, z: config.z };
     }
 
     /**
