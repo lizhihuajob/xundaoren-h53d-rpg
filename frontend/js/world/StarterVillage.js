@@ -157,7 +157,64 @@ export default class StarterVillage {
     }
 
     createWalls() {
+        // 创建地图边界围墙
+        this.createMapBoundaryWalls();
+        // 创建村庄篱笆
         this.createVillageFence();
+    }
+
+    /**
+     * 创建地图边界围墙
+     */
+    createMapBoundaryWalls() {
+        const wallHeight = 3;
+        const wallThickness = 0.5;
+        // 使用棕色，与篱笆风格一致
+        const wallMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
+
+        // 北边围墙
+        const northWall = new THREE.Mesh(
+            new THREE.BoxGeometry(this.width, wallHeight, wallThickness),
+            wallMaterial
+        );
+        northWall.position.set(0, wallHeight / 2, this.bounds.minZ);
+        northWall.castShadow = true;
+        northWall.receiveShadow = true;
+        this.scene.add(northWall);
+        this.walls.push(northWall);
+
+        // 南边围墙
+        const southWall = new THREE.Mesh(
+            new THREE.BoxGeometry(this.width, wallHeight, wallThickness),
+            wallMaterial
+        );
+        southWall.position.set(0, wallHeight / 2, this.bounds.maxZ);
+        southWall.castShadow = true;
+        southWall.receiveShadow = true;
+        this.scene.add(southWall);
+        this.walls.push(southWall);
+
+        // 西边围墙
+        const westWall = new THREE.Mesh(
+            new THREE.BoxGeometry(wallThickness, wallHeight, this.height),
+            wallMaterial
+        );
+        westWall.position.set(this.bounds.minX, wallHeight / 2, 0);
+        westWall.castShadow = true;
+        westWall.receiveShadow = true;
+        this.scene.add(westWall);
+        this.walls.push(westWall);
+
+        // 东边围墙
+        const eastWall = new THREE.Mesh(
+            new THREE.BoxGeometry(wallThickness, wallHeight, this.height),
+            wallMaterial
+        );
+        eastWall.position.set(this.bounds.maxX, wallHeight / 2, 0);
+        eastWall.castShadow = true;
+        eastWall.receiveShadow = true;
+        this.scene.add(eastWall);
+        this.walls.push(eastWall);
     }
 
     createVillageFence() {
@@ -167,11 +224,13 @@ export default class StarterVillage {
         const railThickness = 0.08;
         const gapBetweenPosts = 1.5;
 
+        // 调整村庄边界，紧贴环绕村庄（基于建筑物位置：医馆x=-22, 铁匠铺x=-16, 修炼场x=-8, 广场x=-14）
+        // 广场范围：x=-26到-2, z=6到22
         const villageBounds = {
-            minX: -28,
-            maxX: 2,
-            minZ: 5,
-            maxZ: 25
+            minX: -26,
+            maxX: 0,
+            minZ: 6,
+            maxZ: 22
         };
 
         const gateWidth = 4;
@@ -206,7 +265,7 @@ export default class StarterVillage {
             this.walls.push(rail);
         };
 
-        const createFenceSection = (startX, startZ, endX, endZ, skipGate = false, gateStart = 0, gateEnd = 0) => {
+        const createFenceSection = (startX, startZ, endX, endZ, skipGate = false, gateStart = 0, gateEnd = 0, isVertical = false) => {
             const length = Math.sqrt((endX - startX) ** 2 + (endZ - startZ) ** 2);
             const numPosts = Math.floor(length / gapBetweenPosts) + 1;
             const posts = [];
@@ -217,34 +276,64 @@ export default class StarterVillage {
                 const z = startZ + (endZ - startZ) * t;
 
                 if (skipGate) {
-                    const pos = i === 0 || i === numPosts ? 0 : (startZ + (endZ - startZ) * (i / numPosts));
-                    if (pos >= gateStart && pos <= gateEnd) {
-                        continue;
+                    if (isVertical) {
+                        // 垂直方向（Z轴变化）- 检查z坐标是否在门范围内
+                        if (z >= gateStart && z <= gateEnd) {
+                            continue;
+                        }
+                    } else {
+                        // 水平方向（X轴变化）- 检查x坐标是否在门范围内
+                        if (x >= gateStart && x <= gateEnd) {
+                            continue;
+                        }
                     }
                 }
 
-                posts.push(createFencePost(x, z));
+                posts.push({x, z});
             }
 
+            // 创建柱子
+            for (const post of posts) {
+                createFencePost(post.x, post.z);
+            }
+
+            // 创建横杆，跳过门区域
             for (let i = 0; i < posts.length - 1; i++) {
-                const skipThis = skipGate && 
-                    posts[i].z >= gateStart && posts[i].z <= gateEnd &&
-                    posts[i + 1].z >= gateStart && posts[i + 1].z <= gateEnd;
+                const p1 = posts[i];
+                const p2 = posts[i + 1];
                 
-                if (!skipThis) {
-                    createFenceRail(posts[i].x, posts[i].z, posts[i + 1].x, posts[i + 1].z, railHeight);
-                    createFenceRail(posts[i].x, posts[i].z, posts[i + 1].x, posts[i + 1].z, fenceHeight - railHeight);
+                // 检查这段横杆是否在门区域内
+                let isInGateArea = false;
+                if (skipGate) {
+                    if (isVertical) {
+                        // 垂直方向：检查这段横杆的中点是否在门范围内
+                        const midZ = (p1.z + p2.z) / 2;
+                        isInGateArea = midZ >= gateStart && midZ <= gateEnd;
+                    } else {
+                        // 水平方向：检查这段横杆的中点是否在门范围内
+                        const midX = (p1.x + p2.x) / 2;
+                        isInGateArea = midX >= gateStart && midX <= gateEnd;
+                    }
+                }
+                
+                if (!isInGateArea) {
+                    createFenceRail(p1.x, p1.z, p2.x, p2.z, railHeight);
+                    createFenceRail(p1.x, p1.z, p2.x, p2.z, fenceHeight - railHeight);
                 }
             }
         };
 
+        // 北边篱笆
         createFenceSection(villageBounds.minX, villageBounds.minZ, villageBounds.maxX, villageBounds.minZ);
+        // 南边篱笆
         createFenceSection(villageBounds.minX, villageBounds.maxZ, villageBounds.maxX, villageBounds.maxZ);
+        // 西边篱笆
         createFenceSection(villageBounds.minX, villageBounds.minZ, villageBounds.minX, villageBounds.maxZ);
         
+        // 东边篱笆（带大门缺口）
         const gateStart = gateCenterZ - gateWidth / 2;
         const gateEnd = gateCenterZ + gateWidth / 2;
-        createFenceSection(villageBounds.maxX, villageBounds.minZ, villageBounds.maxX, villageBounds.maxZ, true, gateStart, gateEnd);
+        createFenceSection(villageBounds.maxX, villageBounds.minZ, villageBounds.maxX, villageBounds.maxZ, true, gateStart, gateEnd, true);
 
         this.createGate(gateCenterX, gateCenterZ, gateWidth);
     }
@@ -286,40 +375,44 @@ export default class StarterVillage {
 
     createGateSign(x, z, signHeight) {
         const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 64;
+        canvas.width = 512;
+        canvas.height = 128;
         const ctx = canvas.getContext('2d');
 
+        // 背景
         ctx.fillStyle = '#8b4513';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // 文字 - 使用更大更清晰的字体
         ctx.fillStyle = '#ffd700';
-        ctx.font = 'bold 36px serif';
+        ctx.font = 'bold 72px serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('新手村', canvas.width / 2, canvas.height / 2);
 
+        // 边框
         ctx.strokeStyle = '#654321';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+        ctx.lineWidth = 8;
+        ctx.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
 
         const texture = new THREE.CanvasTexture(canvas);
-        const signGeometry = new THREE.PlaneGeometry(2.5, 0.6);
+        // 提高纹理清晰度
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        
+        const signGeometry = new THREE.PlaneGeometry(3, 0.75);
         const signMaterial = new THREE.MeshBasicMaterial({ 
             map: texture,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            transparent: true
         });
+        
+        // 只创建一个牌子，使用DoubleSide材质，避免重叠
         const sign = new THREE.Mesh(signGeometry, signMaterial);
-        sign.position.set(x + 0.2, signHeight + 0.4, z);
+        sign.position.set(x, signHeight + 0.5, z);
         sign.rotation.y = Math.PI / 2;
         this.scene.add(sign);
         this.walls.push(sign);
-
-        const signBack = new THREE.Mesh(signGeometry, signMaterial);
-        signBack.position.set(x - 0.2, signHeight + 0.4, z);
-        signBack.rotation.y = -Math.PI / 2;
-        this.scene.add(signBack);
-        this.walls.push(signBack);
     }
 
     /**
@@ -340,58 +433,70 @@ export default class StarterVillage {
     }
 
     createTrainingGround() {
-        const config = { name: '修炼场', x: -8, z: 12, radius: 3, color: 0x4169e1 };
+        // 修炼场改为类似广场的平面图形（方形，带棋盘格纹理）
+        const config = { name: '修炼场', x: -8, z: 12, width: 8, depth: 8 };
         
-        const shape = new THREE.Shape();
-        const sides = 5;
-        for (let i = 0; i <= sides; i++) {
-            const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
-            const px = Math.cos(angle) * config.radius;
-            const py = Math.sin(angle) * config.radius;
-            if (i === 0) {
-                shape.moveTo(px, py);
-            } else {
-                shape.lineTo(px, py);
-            }
-        }
-        
-        const geometry = new THREE.ShapeGeometry(shape);
-        const material = new THREE.MeshLambertMaterial({
-            color: config.color,
-            side: THREE.DoubleSide
+        // 主地面 - 深色基底
+        const groundGeometry = new THREE.PlaneGeometry(config.width, config.depth);
+        const groundMaterial = new THREE.MeshLambertMaterial({
+            color: 0x4a4a4a
         });
-        const trainingGround = new THREE.Mesh(geometry, material);
-        trainingGround.rotation.x = -Math.PI / 2;
-        trainingGround.position.set(config.x, 0.02, config.z);
-        trainingGround.receiveShadow = true;
-        trainingGround.userData = { type: 'building', entity: { name: config.name } };
-        this.scene.add(trainingGround);
-        this.buildings.push(trainingGround);
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.set(config.x, 0.02, config.z);
+        ground.receiveShadow = true;
+        ground.userData = { type: 'building', entity: { name: config.name } };
+        this.scene.add(ground);
+        this.buildings.push(ground);
 
-        const innerRadius = config.radius * 0.7;
-        const innerShape = new THREE.Shape();
-        for (let i = 0; i <= sides; i++) {
-            const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
-            const px = Math.cos(angle) * innerRadius;
-            const py = Math.sin(angle) * innerRadius;
-            if (i === 0) {
-                innerShape.moveTo(px, py);
-            } else {
-                innerShape.lineTo(px, py);
+        // 棋盘格纹路 - 类似广场
+        const gridRows = 4;
+        const gridCols = 4;
+        const cellWidth = config.width / gridCols;
+        const cellDepth = config.depth / gridRows;
+
+        for (let row = 0; row < gridRows; row++) {
+            for (let col = 0; col < gridCols; col++) {
+                // 棋盘格效果：交替颜色
+                const isDark = (row + col) % 2 === 1;
+                const cellGeometry = new THREE.PlaneGeometry(cellWidth, cellDepth);
+                const cellMaterial = new THREE.MeshLambertMaterial({
+                    color: isDark ? 0x5a5a5a : 0x6a6a6a
+                });
+                const cell = new THREE.Mesh(cellGeometry, cellMaterial);
+                cell.rotation.x = -Math.PI / 2;
+                cell.position.set(
+                    config.x - config.width / 2 + cellWidth * (col + 0.5),
+                    0.025,
+                    config.z - config.depth / 2 + cellDepth * (row + 0.5)
+                );
+                cell.receiveShadow = true;
+                this.scene.add(cell);
+                this.buildings.push(cell);
             }
         }
+
+        // 边缘装饰边框
+        const borderWidth = 0.3;
+        const borderMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
         
-        const innerGeometry = new THREE.ShapeGeometry(innerShape);
-        const innerMaterial = new THREE.MeshLambertMaterial({
-            color: 0x6495ed,
-            side: THREE.DoubleSide
+        // 四边边框
+        const borders = [
+            { x: config.x, z: config.z - config.depth / 2 - borderWidth / 2, w: config.width + borderWidth * 2, d: borderWidth },
+            { x: config.x, z: config.z + config.depth / 2 + borderWidth / 2, w: config.width + borderWidth * 2, d: borderWidth },
+            { x: config.x - config.width / 2 - borderWidth / 2, z: config.z, w: borderWidth, d: config.depth },
+            { x: config.x + config.width / 2 + borderWidth / 2, z: config.z, w: borderWidth, d: config.depth }
+        ];
+        
+        borders.forEach(pos => {
+            const borderGeometry = new THREE.PlaneGeometry(pos.w, pos.d);
+            const border = new THREE.Mesh(borderGeometry, borderMaterial);
+            border.rotation.x = -Math.PI / 2;
+            border.position.set(pos.x, 0.03, pos.z);
+            border.receiveShadow = true;
+            this.scene.add(border);
+            this.buildings.push(border);
         });
-        const innerGround = new THREE.Mesh(innerGeometry, innerMaterial);
-        innerGround.rotation.x = -Math.PI / 2;
-        innerGround.position.set(config.x, 0.025, config.z);
-        innerGround.receiveShadow = true;
-        this.scene.add(innerGround);
-        this.buildings.push(innerGround);
 
         this.trainingGroundPosition = { x: config.x, z: config.z };
     }
@@ -868,6 +973,7 @@ export default class StarterVillage {
      * 返回碰撞的建筑物信息，如果没有碰撞则返回null
      */
     checkBuildingCollision(position, playerRadius = 0.5) {
+        // 首先检查建筑物碰撞
         for (const building of this.buildings) {
             const config = building.userData.entity;
 
@@ -913,6 +1019,64 @@ export default class StarterVillage {
                     maxZ: maxZ,
                     centerX: building.position.x,
                     centerZ: building.position.z
+                };
+            }
+        }
+
+        // 检查围墙和篱笆碰撞
+        const wallCollision = this.checkWallCollision(position, playerRadius);
+        if (wallCollision) {
+            return wallCollision;
+        }
+
+        return null;
+    }
+
+    /**
+     * 检查与围墙/篱笆的碰撞
+     * 返回碰撞信息，如果没有碰撞则返回null
+     */
+    checkWallCollision(position, playerRadius = 0.5) {
+        for (const wall of this.walls) {
+            if (!wall.geometry || !wall.geometry.parameters) continue;
+
+            const params = wall.geometry.parameters;
+            const wallPos = wall.position;
+            
+            // 根据几何体类型确定碰撞盒
+            let minX, maxX, minZ, maxZ;
+            
+            if (params.width !== undefined && params.depth !== undefined) {
+                // BoxGeometry (围墙、门楣)
+                const halfWidth = params.width / 2 + playerRadius;
+                const halfDepth = params.depth / 2 + playerRadius;
+                minX = wallPos.x - halfWidth;
+                maxX = wallPos.x + halfWidth;
+                minZ = wallPos.z - halfDepth;
+                maxZ = wallPos.z + halfDepth;
+            } else if (params.radiusTop !== undefined && params.height !== undefined) {
+                // CylinderGeometry (篱笆柱子、门柱)
+                const radius = Math.max(params.radiusTop, params.radiusBottom || params.radiusTop) + playerRadius;
+                minX = wallPos.x - radius;
+                maxX = wallPos.x + radius;
+                minZ = wallPos.z - radius;
+                maxZ = wallPos.z + radius;
+            } else {
+                continue;
+            }
+
+            // 检查玩家位置是否在墙体范围内
+            if (position.x >= minX && position.x <= maxX &&
+                position.z >= minZ && position.z <= maxZ) {
+                return {
+                    building: wall,
+                    name: '围墙',
+                    minX: minX,
+                    maxX: maxX,
+                    minZ: minZ,
+                    maxZ: maxZ,
+                    centerX: wallPos.x,
+                    centerZ: wallPos.z
                 };
             }
         }
