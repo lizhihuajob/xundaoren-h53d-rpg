@@ -32,14 +32,30 @@ export default class StarterVillage {
             { monsterId: 'rabbitDemon', positions: [
                 { x: -20, y: 0, z: -15 },
                 { x: -22, y: 0, z: -18 },
-                { x: -18, y: 0, z: -20 }
+                { x: -18, y: 0, z: -20 },
+                // 北面兔妖
+                { x: 15, y: 0, z: 0 },
+                { x: 20, y: 0, z: -5 },
+                { x: 18, y: 0, z: -10 },
+                // 东面树林兔妖（少量，远离村子边缘）
+                { x: 18, y: 0, z: 10 },
+                { x: 22, y: 0, z: 18 }
             ]},
             { monsterId: 'woodSpirit', positions: [
                 { x: 20, y: 0, z: -20 },
-                { x: 22, y: 0, z: -18 }
+                { x: 22, y: 0, z: -18 },
+                // 北面木灵
+                { x: 20, y: 0, z: 0 },
+                { x: 22, y: 0, z: -8 },
+                { x: 25, y: 0, z: -15 },
+                // 东面树林木灵（少量，远离村子边缘）
+                { x: 22, y: 0, z: 14 }
             ]},
             { monsterId: 'stoneGolem', positions: [
-                { x: 0, y: 0, z: -22 }
+                { x: 0, y: 0, z: -22 },
+                // 北面石头怪
+                { x: 12, y: 0, z: -5 },
+                { x: 18, y: 0, z: -12 }
             ]}
         ];
     }
@@ -625,7 +641,7 @@ export default class StarterVillage {
     createDecorations() {
         // 只保留野区（怪物区域）的树木和石头，村子里完全不放
 
-        // 树木（圆锥 + 圆柱）- 只分布在野区（怪物区域）
+        // 树木（圆锥 + 圆柱）- 分布在野区和东面空地
         const treePositions = [
             // 野区树木（兔妖区域附近 - 西北方向）
             { x: -18, z: -12 },
@@ -649,7 +665,18 @@ export default class StarterVillage {
             { x: -6, z: -22 },
             { x: 6, z: -22 },
             { x: -8, z: -20 },
-            { x: 8, z: -20 }
+            { x: 8, z: -20 },
+            // 东面空地树木（村庄东面，z 值在 6-24 之间）
+            { x: 5, z: 8 },
+            { x: 8, z: 12 },
+            { x: 12, z: 10 },
+            { x: 10, z: 16 },
+            { x: 15, z: 14 },
+            { x: 18, z: 8 },
+            { x: 20, z: 16 },
+            { x: 14, z: 20 },
+            { x: 8, z: 22 },
+            { x: 22, z: 20 }
         ];
 
         treePositions.forEach((pos, index) => {
@@ -689,7 +716,7 @@ export default class StarterVillage {
             this.decorations.push(treeGroup);
         });
 
-        // 岩石 - 只分布在野区（怪物区域）
+        // 岩石 - 分布在野区和东面空地
         const rockPositions = [
             // 兔妖区域岩石（西北野区）
             { x: -22, z: -10, s: 1 },
@@ -707,7 +734,15 @@ export default class StarterVillage {
             { x: -2, z: -22, s: 1.5 },
             { x: 2, z: -24, s: 1 },
             { x: -5, z: -18, s: 0.8 },
-            { x: 8, z: -22, s: 1.3 }
+            { x: 8, z: -22, s: 1.3 },
+            // 东面空地岩石
+            { x: 6, z: 14, s: 0.7 },
+            { x: 10, z: 8, s: 0.9 },
+            { x: 16, z: 12, s: 1.1 },
+            { x: 12, z: 18, s: 0.8 },
+            { x: 20, z: 14, s: 0.6 },
+            { x: 18, z: 22, s: 1 },
+            { x: 8, z: 18, s: 0.7 }
         ];
 
         rockPositions.forEach(pos => {
@@ -722,7 +757,7 @@ export default class StarterVillage {
             this.decorations.push(rock);
         });
 
-        // 小石头 - 只散落在野区
+        // 小石头 - 散落在野区和东面空地
         for (let i = 0; i < 20; i++) {
             const x = (Math.random() - 0.5) * 30;
             const z = -5 - Math.random() * 20; // 只在北侧野区生成 (z < -5)
@@ -738,10 +773,53 @@ export default class StarterVillage {
             this.decorations.push(stone);
         }
 
-        // 草丛装饰 - 只分布在野区
+        // 东面空地小石头
+        for (let i = 0; i < 15; i++) {
+            const x = 2 + Math.random() * 22; // 东面区域 (2 < x < 24)
+            const z = 6 + Math.random() * 18; // 村庄东面 z 范围 (6 < z < 24)
+
+            const size = 0.1 + Math.random() * 0.25;
+            const geometry = new THREE.DodecahedronGeometry(size);
+            const material = new THREE.MeshLambertMaterial({ color: 0x808080 });
+            const stone = new THREE.Mesh(geometry, material);
+            stone.position.set(x, size * 0.3, z);
+            stone.rotation.set(Math.random(), Math.random(), Math.random());
+            stone.castShadow = true;
+            this.scene.add(stone);
+            this.decorations.push(stone);
+        }
+
+        // 草丛装饰 - 分布在野区和东面空地
         for (let i = 0; i < 25; i++) {
             const x = (Math.random() - 0.5) * 35;
             const z = -5 - Math.random() * 22; // 只在北侧野区生成 (z < -5)
+
+            const grassGroup = new THREE.Group();
+            grassGroup.position.set(x, 0, z);
+
+            // 创建几簇草叶
+            for (let j = 0; j < 3 + Math.floor(Math.random() * 3); j++) {
+                const grassGeometry = new THREE.ConeGeometry(0.05, 0.3 + Math.random() * 0.2, 4);
+                const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x4a7c4a });
+                const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+                grass.position.set(
+                    (Math.random() - 0.5) * 0.3,
+                    0,
+                    (Math.random() - 0.5) * 0.3
+                );
+                grass.rotation.y = Math.random() * Math.PI * 2;
+                grass.rotation.z = (Math.random() - 0.5) * 0.3;
+                grassGroup.add(grass);
+            }
+
+            this.scene.add(grassGroup);
+            this.decorations.push(grassGroup);
+        }
+
+        // 东面空地草丛装饰
+        for (let i = 0; i < 20; i++) {
+            const x = 2 + Math.random() * 22; // 东面区域 (2 < x < 24)
+            const z = 6 + Math.random() * 18; // 村庄东面 z 范围 (6 < z < 24)
 
             const grassGroup = new THREE.Group();
             grassGroup.position.set(x, 0, z);
@@ -981,48 +1059,62 @@ export default class StarterVillage {
         const gateCenterZ = (fb.minZ + fb.maxZ) / 2;
         const gateHalfWidth = 1.5;
 
-        const nearLeftFence = position.x >= fb.minX - playerRadius && position.x <= fb.minX + playerRadius;
-        const nearRightFence = position.x >= fb.maxX - playerRadius && position.x <= fb.maxX + playerRadius;
-        const nearBottomFence = position.z >= fb.minZ - playerRadius && position.z <= fb.minZ + playerRadius;
-        const nearTopFence = position.z >= fb.maxZ - playerRadius && position.z <= fb.maxZ + playerRadius;
+        const leftFenceDist = position.x - fb.minX;
+        const rightFenceDist = fb.maxX - position.x;
+        const bottomFenceDist = position.z - fb.minZ;
+        const topFenceDist = fb.maxZ - position.z;
 
-        const inZRange = position.z >= fb.minZ - playerRadius && position.z <= fb.maxZ + playerRadius;
-        const inXRange = position.x >= fb.minX - playerRadius && position.x <= fb.maxX + playerRadius;
+        const isInsideFence = position.x > fb.minX && position.x < fb.maxX && 
+                             position.z > fb.minZ && position.z < fb.maxZ;
 
-        if (nearLeftFence && inZRange) {
-            return {
-                name: '篱笆',
-                type: 'left',
-                fenceX: fb.minX
-            };
-        }
-
-        if (nearRightFence && inZRange) {
-            const isAtGate = position.z >= gateCenterZ - gateHalfWidth && 
-                            position.z <= gateCenterZ + gateHalfWidth;
-            if (!isAtGate) {
+        if (Math.abs(leftFenceDist) < playerRadius + 0.1) {
+            if (isInsideFence || (position.z >= fb.minZ && position.z <= fb.maxZ)) {
                 return {
                     name: '篱笆',
-                    type: 'right',
-                    fenceX: fb.maxX
+                    type: 'left',
+                    fenceX: fb.minX,
+                    distance: leftFenceDist,
+                    isInside: leftFenceDist > 0
                 };
             }
         }
 
-        if (nearBottomFence && inXRange) {
-            return {
-                name: '篱笆',
-                type: 'bottom',
-                fenceZ: fb.minZ
-            };
+        if (Math.abs(rightFenceDist) < playerRadius + 0.1) {
+            const isAtGate = position.z >= gateCenterZ - gateHalfWidth && 
+                            position.z <= gateCenterZ + gateHalfWidth;
+            if (!isAtGate && (isInsideFence || (position.z >= fb.minZ && position.z <= fb.maxZ))) {
+                return {
+                    name: '篱笆',
+                    type: 'right',
+                    fenceX: fb.maxX,
+                    distance: rightFenceDist,
+                    isInside: rightFenceDist > 0
+                };
+            }
         }
 
-        if (nearTopFence && inXRange) {
-            return {
-                name: '篱笆',
-                type: 'top',
-                fenceZ: fb.maxZ
-            };
+        if (Math.abs(bottomFenceDist) < playerRadius + 0.1) {
+            if (isInsideFence || (position.x >= fb.minX && position.x <= fb.maxX)) {
+                return {
+                    name: '篱笆',
+                    type: 'bottom',
+                    fenceZ: fb.minZ,
+                    distance: bottomFenceDist,
+                    isInside: bottomFenceDist > 0
+                };
+            }
+        }
+
+        if (Math.abs(topFenceDist) < playerRadius + 0.1) {
+            if (isInsideFence || (position.x >= fb.minX && position.x <= fb.maxX)) {
+                return {
+                    name: '篱笆',
+                    type: 'top',
+                    fenceZ: fb.maxZ,
+                    distance: topFenceDist,
+                    isInside: topFenceDist > 0
+                };
+            }
         }
 
         return null;
@@ -1034,20 +1126,36 @@ export default class StarterVillage {
      */
     resolveFenceCollision(position, collision) {
         const newPosition = { ...position };
-        const margin = 0.3;
+        const margin = 0.8;
 
         switch (collision.type) {
             case 'left':
-                newPosition.x = collision.fenceX - margin;
+                if (collision.isInside) {
+                    newPosition.x = collision.fenceX + margin;
+                } else {
+                    newPosition.x = collision.fenceX - margin;
+                }
                 break;
             case 'right':
-                newPosition.x = collision.fenceX + margin;
+                if (collision.isInside) {
+                    newPosition.x = collision.fenceX - margin;
+                } else {
+                    newPosition.x = collision.fenceX + margin;
+                }
                 break;
             case 'bottom':
-                newPosition.z = collision.fenceZ - margin;
+                if (collision.isInside) {
+                    newPosition.z = collision.fenceZ + margin;
+                } else {
+                    newPosition.z = collision.fenceZ - margin;
+                }
                 break;
             case 'top':
-                newPosition.z = collision.fenceZ + margin;
+                if (collision.isInside) {
+                    newPosition.z = collision.fenceZ - margin;
+                } else {
+                    newPosition.z = collision.fenceZ + margin;
+                }
                 break;
         }
 

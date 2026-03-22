@@ -165,11 +165,31 @@ export default class Monster {
     }
 
     /**
+     * 检查玩家是否在村子里
+     */
+    isPlayerInVillage(position) {
+        const villageBounds = {
+            minX: -26,
+            maxX: 0,
+            minZ: 6,
+            maxZ: 24
+        };
+        return position.x > villageBounds.minX && position.x < villageBounds.maxX &&
+               position.z > villageBounds.minZ && position.z < villageBounds.maxZ;
+    }
+
+    /**
      * 追击状态
      */
     updateChase(deltaTime, player, distanceToPlayer, distanceToSpawn) {
         // 超出追击范围，返回
         if (distanceToSpawn > this.aggroRange * 3) {
+            this.state = 'return';
+            return;
+        }
+        
+        // 如果玩家在村子里，停止追击
+        if (this.isPlayerInVillage(player.position)) {
             this.state = 'return';
             return;
         }
@@ -194,6 +214,12 @@ export default class Monster {
      * 攻击状态
      */
     updateAttack(deltaTime, player, distanceToPlayer) {
+        // 如果玩家在村子里，停止攻击
+        if (this.isPlayerInVillage(player.position)) {
+            this.state = 'return';
+            return;
+        }
+        
         // 目标超出攻击范围
         if (distanceToPlayer > this.attackRange * 1.5) {
             this.state = 'chase';
@@ -238,9 +264,16 @@ export default class Monster {
         
         if (distance > 0) {
             const moveAmount = speed * deltaTime * 2;
-            this.position.x += (dx / distance) * moveAmount;
-            this.position.z += (dz / distance) * moveAmount;
-            this.rotation = Math.atan2(dx, dz);
+            const newX = this.position.x + (dx / distance) * moveAmount;
+            const newZ = this.position.z + (dz / distance) * moveAmount;
+            
+            if (!this.isPlayerInVillage({ x: newX, z: newZ })) {
+                this.position.x = newX;
+                this.position.z = newZ;
+                this.rotation = Math.atan2(dx, dz);
+            } else {
+                this.state = 'return';
+            }
         }
     }
 
