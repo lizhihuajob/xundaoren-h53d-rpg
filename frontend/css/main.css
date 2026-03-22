@@ -1139,6 +1139,46 @@ html, body {
     cursor: not-allowed;
 }
 
+.sell-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: 12px;
+}
+
+.sell-count {
+    width: 50px;
+    padding: 6px 8px;
+    background: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-color);
+    text-align: center;
+}
+
+.sell-count::-webkit-inner-spin-button,
+.sell-count::-webkit-outer-spin-button {
+    opacity: 1;
+}
+
+.shop-item-sell {
+    padding: 8px 16px;
+    background: var(--success-color);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.shop-item-sell:hover {
+    background: #2ecc71;
+}
+
+.sell-item .shop-item-price {
+    color: var(--success-color);
+}
+
 /* 技能面板 */
 .skills-list {
     display: flex;

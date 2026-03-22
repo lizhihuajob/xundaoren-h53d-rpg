@@ -815,6 +815,13 @@ class Game {
                     this.openShop(this.currentNPC.shopItems);
                 }
                 break;
+            
+            case 'openSell':
+                this.ui.hideDialog();
+                if (this.currentNPC && this.currentNPC.canSell) {
+                    this.openSellShop();
+                }
+                break;
                 
             case 'openSkills':
                 this.ui.hideDialog();
@@ -923,6 +930,37 @@ class Game {
             this.ui.updateInventoryPanel(this.player);
 
             return { success: true, newGold: this.player.gold };
+        });
+    }
+
+    openSellShop() {
+        const sellableItems = this.player.inventory.filter(slot => slot !== null);
+        this.ui.showSellShop(sellableItems, this.player.gold, (slotIndex, count) => {
+            const slot = this.player.inventory[slotIndex];
+            if (!slot) {
+                return { success: false, message: '物品不存在' };
+            }
+
+            const item = getItem(slot.itemId);
+            if (!item) {
+                return { success: false, message: '物品信息错误' };
+            }
+
+            const sellPrice = Math.floor(item.price * 0.5);
+            const actualCount = Math.min(count, slot.count);
+            const totalGold = sellPrice * actualCount;
+
+            this.player.gold += totalGold;
+            slot.count -= actualCount;
+
+            if (slot.count <= 0) {
+                this.player.inventory[slotIndex] = null;
+            }
+
+            this.ui.updatePlayerHUD(this.player);
+            this.ui.updateInventoryPanel(this.player);
+
+            return { success: true, newGold: this.player.gold, message: `卖出 ${actualCount} 个 ${item.name}，获得 ${totalGold} 金币` };
         });
     }
 

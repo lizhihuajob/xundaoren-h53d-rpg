@@ -1012,55 +1012,48 @@ export default class StarterVillage {
         const fb = this.fenceBounds;
         const gateCenterZ = (fb.minZ + fb.maxZ) / 2;
         const gateHalfWidth = 1.5;
+        const collisionMargin = playerRadius + 0.3;
 
-        const insideVillage = position.x >= fb.minX && position.x <= fb.maxX &&
-                              position.z >= fb.minZ && position.z <= fb.maxZ;
+        const inZRange = position.z >= fb.minZ && position.z <= fb.maxZ;
+        const inXRange = position.x >= fb.minX && position.x <= fb.maxX;
+        const nearGate = position.z >= gateCenterZ - gateHalfWidth && 
+                        position.z <= gateCenterZ + gateHalfWidth;
 
-        const nearLeftFence = position.x >= fb.minX - playerRadius && position.x <= fb.minX + playerRadius;
-        const nearRightFence = position.x >= fb.maxX - playerRadius && position.x <= fb.maxX + playerRadius;
-        const nearBottomFence = position.z >= fb.minZ - playerRadius && position.z <= fb.minZ + playerRadius;
-        const nearTopFence = position.z >= fb.maxZ - playerRadius && position.z <= fb.maxZ + playerRadius;
-
-        const inZRange = position.z >= fb.minZ - playerRadius && position.z <= fb.maxZ + playerRadius;
-        const inXRange = position.x >= fb.minX - playerRadius && position.x <= fb.maxX + playerRadius;
-
-        if (nearLeftFence && inZRange) {
+        if (position.x > fb.minX - collisionMargin && position.x < fb.minX + collisionMargin && inZRange) {
             return {
                 name: '篱笆',
                 type: 'left',
                 fenceX: fb.minX,
-                insideVillage: insideVillage
+                insideVillage: position.x > fb.minX
             };
         }
 
-        if (nearRightFence && inZRange) {
-            const isAtGate = position.z >= gateCenterZ - gateHalfWidth && 
-                            position.z <= gateCenterZ + gateHalfWidth;
-            if (!isAtGate) {
+        if (position.x > fb.maxX - collisionMargin && position.x < fb.maxX + collisionMargin && inZRange) {
+            if (!nearGate) {
                 return {
                     name: '篱笆',
                     type: 'right',
                     fenceX: fb.maxX,
-                    insideVillage: insideVillage
+                    insideVillage: position.x < fb.maxX
                 };
             }
         }
 
-        if (nearBottomFence && inXRange) {
+        if (position.z > fb.minZ - collisionMargin && position.z < fb.minZ + collisionMargin && inXRange) {
             return {
                 name: '篱笆',
                 type: 'bottom',
                 fenceZ: fb.minZ,
-                insideVillage: insideVillage
+                insideVillage: position.z > fb.minZ
             };
         }
 
-        if (nearTopFence && inXRange) {
+        if (position.z > fb.maxZ - collisionMargin && position.z < fb.maxZ + collisionMargin && inXRange) {
             return {
                 name: '篱笆',
                 type: 'top',
                 fenceZ: fb.maxZ,
-                insideVillage: insideVillage
+                insideVillage: position.z < fb.maxZ
             };
         }
 
@@ -1073,7 +1066,7 @@ export default class StarterVillage {
      */
     resolveFenceCollision(position, collision) {
         const newPosition = { ...position };
-        const margin = 0.5;
+        const margin = 0.8;
 
         switch (collision.type) {
             case 'left':

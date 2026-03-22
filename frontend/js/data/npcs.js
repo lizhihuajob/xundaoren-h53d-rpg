@@ -120,6 +120,27 @@ export const NPCS = {
                 ]
             }
         }
+    },
+    wanderingMerchant: {
+        id: 'wanderingMerchant',
+        name: '游商·贾三',
+        title: '云游商人',
+        color: 0xffd700,
+        size: 1.0,
+        position: { x: -12, y: 0, z: 8 },
+        type: 'shop',
+        shopItems: ['hpPotion', 'mpPotion', 'basicSword', 'basicRobe'],
+        canSell: true,
+        dialogs: {
+            default: {
+                text: '客官好！我是云游四方的商人贾三。这里有好货，也收各种材料，价格公道！',
+                options: [
+                    { text: '购买物品', action: 'openShop' },
+                    { text: '出售物品', action: 'openSell' },
+                    { text: '告辞', action: 'close' }
+                ]
+            }
+        }
     }
 };
 

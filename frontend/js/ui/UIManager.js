@@ -300,6 +300,74 @@ export default class UIManager {
         panel.classList.remove('hidden');
     }
 
+    showSellShop(inventoryItems, playerGold, onSell) {
+        const panel = document.getElementById('shop-panel');
+        const titleEl = document.getElementById('shop-title');
+        const goldEl = document.getElementById('shop-player-gold');
+        const itemsContainer = document.getElementById('shop-items');
+
+        if (!panel || !itemsContainer) return;
+
+        if (titleEl) titleEl.textContent = '出售物品';
+        if (goldEl) goldEl.textContent = playerGold;
+
+        itemsContainer.innerHTML = '';
+
+        if (inventoryItems.length === 0) {
+            itemsContainer.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">背包中没有可出售的物品</p>';
+            panel.classList.remove('hidden');
+            return;
+        }
+
+        this.playerInventory = this.game.player ? this.game.player.inventory : [];
+
+        inventoryItems.forEach((slot, displayIndex) => {
+            if (!slot) return;
+
+            const item = getItem(slot.itemId);
+            if (!item) return;
+
+            const sellPrice = Math.floor(item.price * 0.5);
+            const actualSlotIndex = this.playerInventory.findIndex(s => s === slot);
+
+            const shopItem = document.createElement('div');
+            shopItem.className = 'shop-item sell-item';
+            shopItem.innerHTML = `
+                <div class="shop-item-icon">${item.icon}</div>
+                <div class="shop-item-info">
+                    <div class="shop-item-name">${item.name} x${slot.count}</div>
+                    <div class="shop-item-desc">${item.description}</div>
+                </div>
+                <div class="shop-item-price">${sellPrice} 金币</div>
+                <div class="sell-controls">
+                    <input type="number" class="sell-count" min="1" max="${slot.count}" value="1" data-slot="${actualSlotIndex}">
+                    <button class="shop-item-sell" data-slot="${actualSlotIndex}">出售</button>
+                </div>
+            `;
+
+            const sellBtn = shopItem.querySelector('.shop-item-sell');
+            const countInput = shopItem.querySelector('.sell-count');
+
+            sellBtn.addEventListener('click', () => {
+                const count = parseInt(countInput.value) || 1;
+                if (onSell) {
+                    const result = onSell(actualSlotIndex, count);
+                    if (result.success) {
+                        this.showToast(result.message, 'success');
+                        const newInventory = this.game.player.inventory.filter(s => s !== null);
+                        this.showSellShop(newInventory, result.newGold, onSell);
+                    } else {
+                        this.showToast(result.message, 'warning');
+                    }
+                }
+            });
+
+            itemsContainer.appendChild(shopItem);
+        });
+
+        panel.classList.remove('hidden');
+    }
+
     /**
      * 显示商店面板
      * @param {Array} shopItems - 商店物品ID列表
@@ -308,12 +376,13 @@ export default class UIManager {
      */
     showShop(shopItems, playerGold, onBuy) {
         const panel = document.getElementById('shop-panel');
+        const titleEl = document.getElementById('shop-title');
         const goldEl = document.getElementById('shop-player-gold');
         const itemsContainer = document.getElementById('shop-items');
 
         if (!panel || !itemsContainer) return;
 
-        // 更新金币显示
+        if (titleEl) titleEl.textContent = '商店';
         if (goldEl) goldEl.textContent = playerGold;
 
         // 清空并重新填充商品

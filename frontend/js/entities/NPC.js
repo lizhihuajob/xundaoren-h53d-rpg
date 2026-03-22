@@ -23,6 +23,7 @@ export default class NPC {
         this.type = config.type;
         this.dialogs = config.dialogs;
         this.shopItems = config.shopItems || [];
+        this.canSell = config.canSell || false;
         this.hidden = config.hidden || false;
         
         // 3D对象
