@@ -338,7 +338,7 @@ export default class UIManager {
                     <div class="shop-item-name">${item.name} x${slot.count}</div>
                     <div class="shop-item-desc">${item.description}</div>
                 </div>
-                <div class="shop-item-price">${sellPrice} 金币</div>
+                <div class="shop-item-price">${sellPrice} 灵石</div>
                 <div class="sell-controls">
                     <input type="number" class="sell-count" min="1" max="${slot.count}" value="1" data-slot="${actualSlotIndex}">
                     <button class="shop-item-sell" data-slot="${actualSlotIndex}">出售</button>
@@ -400,7 +400,7 @@ export default class UIManager {
                     <div class="shop-item-name">${item.name}</div>
                     <div class="shop-item-desc">${item.description}</div>
                 </div>
-                <div class="shop-item-price">${item.price} 金币</div>
+                <div class="shop-item-price">${item.price} 灵石</div>
                 <button class="shop-item-buy" data-item-id="${item.id}" ${playerGold < item.price ? 'disabled' : ''}>
                     购买
                 </button>
@@ -471,14 +471,14 @@ export default class UIManager {
     }
 
     /**
-     * 显示金币获得
+     * 显示灵石获得
      */
     showGoldGain(gold) {
-        this.showToast(`获得 ${gold} 金币`, 'success');
+        this.showToast(`获得 ${gold} 灵石`, 'success');
     }
 
     /**
-     * 在指定位置显示奖励提示（经验、金币等）
+     * 在指定位置显示奖励提示（经验、灵石等）
      * @param {number} x - 屏幕X坐标
      * @param {number} y - 屏幕Y坐标
      * @param {string} text - 显示的文本
@@ -615,7 +615,7 @@ export default class UIManager {
             <div class="stat-row"><span>攻击力</span><span>${player.attack}</span></div>
             <div class="stat-row"><span>防御力</span><span>${player.defense}</span></div>
             <div class="stat-row"><span>移动速度</span><span>${player.speed}</span></div>
-            <div class="stat-row"><span>金币</span><span>${player.gold}</span></div>
+            <div class="stat-row"><span>灵石</span><span>${player.gold}</span></div>
         `;
     }
 
