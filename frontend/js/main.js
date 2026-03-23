@@ -715,13 +715,13 @@ class Game {
                 });
             }
             
-            // 金币
+            // 灵石
             if (result.gold) {
                 this.player.gainGold(result.gold);
                 
-                // 在怪物头顶显示金币奖励（在经验下方）
+                // 在怪物头顶显示灵石奖励（在经验下方）
                 if (rewardScreenPos) {
-                    this.ui.showRewardAtPosition(rewardScreenPos.x, rewardScreenPos.y, `+${result.gold} 金币`, 'gold');
+                    this.ui.showRewardAtPosition(rewardScreenPos.x, rewardScreenPos.y, `+${result.gold} 灵石`, 'gold');
                 } else {
                     this.ui.showGoldGain(result.gold);
                 }
@@ -850,7 +850,7 @@ class Game {
             case 'giveGift':
                 this.player.gainGold(100);
                 this.player.foundMysteriousElder = true;
-                this.ui.showToast('神秘老者赠予你100金币！', 'success');
+                this.ui.showToast('神秘老者赠予你100灵石！', 'success');
                 this.currentNPC.setDialog('afterGift');
                 const dialog = this.currentNPC.getDialog('afterGift', this.player);
                 this.ui.showDialog(this.currentNPC, dialog);
@@ -899,13 +899,13 @@ class Game {
      */
     openShop(shopItems) {
         this.ui.showShop(shopItems, this.player.gold, (item) => {
-            // 检查金币是否足够
+            // 检查灵石是否足够
             if (this.player.gold < item.price) {
-                return { success: false, message: '金币不足' };
+                return { success: false, message: '灵石不足' };
             }
 
             // 检查背包是否有空间
-            // 1. 先检查是否可以堆叠到已有物品
+            // 1. 先检查是否可以堆叠到已有物品（相同物品且未达堆叠上限）
             const canStack = item.stackable && this.player.inventory.some(slot =>
                 slot && slot.itemId === item.id && slot.count < item.maxStack
             );
@@ -914,6 +914,7 @@ class Game {
 
             console.log('购买检查:', { itemId: item.id, stackable: item.stackable, canStack, hasEmptySlot, inventory: this.player.inventory });
 
+            // 如果不能堆叠（不可堆叠或已达上限）且没有空格子，则背包已满
             if (!canStack && !hasEmptySlot) {
                 return { success: false, message: '背包已满' };
             }
@@ -960,7 +961,7 @@ class Game {
             this.ui.updatePlayerHUD(this.player);
             this.ui.updateInventoryPanel(this.player);
 
-            return { success: true, newGold: this.player.gold, message: `卖出 ${actualCount} 个 ${item.name}，获得 ${totalGold} 金币` };
+            return { success: true, newGold: this.player.gold, message: `卖出 ${actualCount} 个 ${item.name}，获得 ${totalGold} 灵石` };
         });
     }
 
