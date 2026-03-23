@@ -899,9 +899,9 @@ class Game {
      */
     openShop(shopItems) {
         this.ui.showShop(shopItems, this.player.gold, (item) => {
-            // 检查金币是否足够
+            // 检查灵石是否足够
             if (this.player.gold < item.price) {
-                return { success: false, message: '金币不足' };
+                return { success: false, message: '灵石不足' };
             }
 
             // 检查背包是否有空间
@@ -960,7 +960,7 @@ class Game {
             this.ui.updatePlayerHUD(this.player);
             this.ui.updateInventoryPanel(this.player);
 
-            return { success: true, newGold: this.player.gold, message: `卖出 ${actualCount} 个 ${item.name}，获得 ${totalGold} 金币` };
+            return { success: true, newGold: this.player.gold, message: `卖出 ${actualCount} 个 ${item.name}，获得 ${totalGold} 灵石` };
         });
     }
 
@@ -1003,16 +1003,17 @@ class Game {
              const result = useItem(item, this.player);
              if (result.success) {
                  this.ui.showToast(result.message, 'success');
-                 // 减少数量或移除
-                 if (item.stackable && item.count > 1) {
-                     item.count--;
+                 // 减少数量或移除 - 直接操作背包数据
+                 const invSlot = this.player.inventory[index];
+                 if (invSlot && invSlot.count > 1) {
+                     invSlot.count--;
                  } else {
                      this.player.inventory[index] = null;
                  }
                  this.ui.updateInventoryPanel(this.player);
                  this.ui.updatePlayerHUD(this.player);
              } else {
-                 this.ui.showToast(result.message, 'warning'); // 例如满血时
+                 this.ui.showToast(result.message, 'warning');
              }
         } else {
             // 其他物品显示描述

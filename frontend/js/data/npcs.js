@@ -127,7 +127,7 @@ export const NPCS = {
         title: '云游商人',
         color: 0xffd700,
         size: 1.0,
-        position: { x: -12, y: 0, z: 8 },
+        position: { x: -15, y: 0, z: 18 },
         type: 'shop',
         shopItems: ['hpPotion', 'mpPotion', 'basicSword', 'basicRobe'],
         canSell: true,

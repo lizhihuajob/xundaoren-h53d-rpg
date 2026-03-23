@@ -120,11 +120,17 @@ export function useItem(item, player) {
     
     switch (effect.type) {
         case 'heal':
+            if (player.hp >= player.maxHp) {
+                return { success: false, message: '生命值已满，无需使用药品' };
+            }
             const healAmount = Math.min(effect.value, player.maxHp - player.hp);
             player.hp += healAmount;
             message = `恢复了${healAmount}点生命值`;
             break;
         case 'mana':
+            if (player.mp >= player.maxMp) {
+                return { success: false, message: '法力值已满，无需使用药品' };
+            }
             const manaAmount = Math.min(effect.value, player.maxMp - player.mp);
             player.mp += manaAmount;
             message = `恢复了${manaAmount}点法力值`;
