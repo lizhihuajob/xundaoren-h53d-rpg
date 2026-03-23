@@ -114,17 +114,25 @@ export function useItem(item, player) {
     if (item.type !== 'consumable') {
         return { success: false, message: '该物品无法使用' };
     }
-    
+
     const effect = item.effect;
     let message = '';
-    
+
     switch (effect.type) {
         case 'heal':
+            // 检查是否满血
+            if (player.hp >= player.maxHp) {
+                return { success: false, message: '生命值已满，无需使用药品' };
+            }
             const healAmount = Math.min(effect.value, player.maxHp - player.hp);
             player.hp += healAmount;
             message = `恢复了${healAmount}点生命值`;
             break;
         case 'mana':
+            // 检查是否满蓝
+            if (player.mp >= player.maxMp) {
+                return { success: false, message: '法力值已满，无需使用药品' };
+            }
             const manaAmount = Math.min(effect.value, player.maxMp - player.mp);
             player.mp += manaAmount;
             message = `恢复了${manaAmount}点法力值`;
@@ -132,6 +140,6 @@ export function useItem(item, player) {
         default:
             return { success: false, message: '未知效果' };
     }
-    
+
     return { success: true, message };
 }
