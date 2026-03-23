@@ -338,7 +338,7 @@ export default class UIManager {
                     <div class="shop-item-name">${item.name} x${slot.count}</div>
                     <div class="shop-item-desc">${item.description}</div>
                 </div>
-                <div class="shop-item-price">${sellPrice} 金币</div>
+                <div class="shop-item-price">${sellPrice} 灵石</div>
                 <div class="sell-controls">
                     <input type="number" class="sell-count" min="1" max="${slot.count}" value="1" data-slot="${actualSlotIndex}">
                     <button class="shop-item-sell" data-slot="${actualSlotIndex}">出售</button>
@@ -400,7 +400,7 @@ export default class UIManager {
                     <div class="shop-item-name">${item.name}</div>
                     <div class="shop-item-desc">${item.description}</div>
                 </div>
-                <div class="shop-item-price">${item.price} 金币</div>
+                <div class="shop-item-price">${item.price} 灵石</div>
                 <button class="shop-item-buy" data-item-id="${item.id}" ${playerGold < item.price ? 'disabled' : ''}>
                     购买
                 </button>

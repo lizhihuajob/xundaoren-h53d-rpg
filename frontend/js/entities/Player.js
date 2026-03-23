@@ -541,7 +541,7 @@ export default class Player {
     addItem(item, count = 1) {
         // 检查是否可堆叠
         if (item.stackable) {
-            const existingIndex = this.inventory.findIndex(inv => inv && inv.itemId === item.id);
+            const existingIndex = this.inventory.findIndex(inv => inv && inv.itemId === item.id && inv.count < item.maxStack);
             if (existingIndex !== -1) {
                 const existing = this.inventory[existingIndex];
                 const newCount = Math.min(item.maxStack, existing.count + count);
