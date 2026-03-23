@@ -715,13 +715,13 @@ class Game {
                 });
             }
             
-            // 金币
+            // 灵石
             if (result.gold) {
                 this.player.gainGold(result.gold);
                 
-                // 在怪物头顶显示金币奖励（在经验下方）
+                // 在怪物头顶显示灵石奖励（在经验下方）
                 if (rewardScreenPos) {
-                    this.ui.showRewardAtPosition(rewardScreenPos.x, rewardScreenPos.y, `+${result.gold} 金币`, 'gold');
+                    this.ui.showRewardAtPosition(rewardScreenPos.x, rewardScreenPos.y, `+${result.gold} 灵石`, 'gold');
                 } else {
                     this.ui.showGoldGain(result.gold);
                 }
