@@ -243,7 +243,7 @@ export default class StarterVillage {
             this.walls.push(rail);
         };
 
-        const createFenceSection = (startX, startZ, endX, endZ, skipGate = false, gateStart = 0, gateEnd = 0) => {
+        const createFenceSection = (startX, startZ, endX, endZ, skipGate = false, gateStart = 0, gateEnd = 0, isVerticalGate = false) => {
             const length = Math.sqrt((endX - startX) ** 2 + (endZ - startZ) ** 2);
             const numPosts = Math.floor(length / gapBetweenPosts) + 1;
             const posts = [];
@@ -254,8 +254,14 @@ export default class StarterVillage {
                 const z = startZ + (endZ - startZ) * t;
 
                 if (skipGate) {
-                    if (z >= gateStart && z <= gateEnd) {
-                        continue;
+                    if (isVerticalGate) {
+                        if (x >= gateStart && x <= gateEnd) {
+                            continue;
+                        }
+                    } else {
+                        if (z >= gateStart && z <= gateEnd) {
+                            continue;
+                        }
                     }
                 }
 
@@ -263,32 +269,49 @@ export default class StarterVillage {
             }
 
             for (let i = 0; i < posts.length - 1; i++) {
+                const x1 = posts[i].x;
                 const z1 = posts[i].z;
+                const x2 = posts[i + 1].x;
                 const z2 = posts[i + 1].z;
                 
-                const skipThis = skipGate && 
-                    ((z1 >= gateStart && z1 <= gateEnd) || (z2 >= gateStart && z2 <= gateEnd) ||
-                     (Math.min(z1, z2) < gateStart && Math.max(z1, z2) > gateEnd));
+                let skipThis = false;
+                if (skipGate) {
+                    if (isVerticalGate) {
+                        skipThis = ((x1 >= gateStart && x1 <= gateEnd) || (x2 >= gateStart && x2 <= gateEnd) ||
+                                   (Math.min(x1, x2) < gateStart && Math.max(x1, x2) > gateEnd));
+                    } else {
+                        skipThis = ((z1 >= gateStart && z1 <= gateEnd) || (z2 >= gateStart && z2 <= gateEnd) ||
+                                   (Math.min(z1, z2) < gateStart && Math.max(z1, z2) > gateEnd));
+                    }
+                }
                 
                 if (!skipThis) {
-                    createFenceRail(posts[i].x, posts[i].z, posts[i + 1].x, posts[i + 1].z, railHeight);
-                    createFenceRail(posts[i].x, posts[i].z, posts[i + 1].x, posts[i + 1].z, fenceHeight - railHeight);
+                    createFenceRail(x1, z1, x2, z2, railHeight);
+                    createFenceRail(x1, z1, x2, z2, fenceHeight - railHeight);
                 }
             }
         };
 
+        const northGateCenterX = (villageBounds.minX + villageBounds.maxX) / 2;
+        const northGateCenterZ = villageBounds.maxZ;
+
         createFenceSection(villageBounds.minX, villageBounds.minZ, villageBounds.maxX, villageBounds.minZ);
-        createFenceSection(villageBounds.minX, villageBounds.maxZ, villageBounds.maxX, villageBounds.maxZ);
+        
+        const northGateStart = northGateCenterX - gateWidth / 2;
+        const northGateEnd = northGateCenterX + gateWidth / 2;
+        createFenceSection(villageBounds.minX, villageBounds.maxZ, villageBounds.maxX, villageBounds.maxZ, true, northGateStart, northGateEnd, true);
+        
         createFenceSection(villageBounds.minX, villageBounds.minZ, villageBounds.minX, villageBounds.maxZ);
         
         const gateStart = gateCenterZ - gateWidth / 2;
         const gateEnd = gateCenterZ + gateWidth / 2;
         createFenceSection(villageBounds.maxX, villageBounds.minZ, villageBounds.maxX, villageBounds.maxZ, true, gateStart, gateEnd);
 
-        this.createGate(gateCenterX, gateCenterZ, gateWidth);
+        this.createGate(gateCenterX, gateCenterZ, gateWidth, false);
+        this.createGate(northGateCenterX, northGateCenterZ, gateWidth, false, false);
     }
 
-    createGate(x, z, width) {
+    createGate(x, z, width, hasSign = true, isHorizontal = true) {
         const pillarHeight = 2.5;
         const pillarRadius = 0.25;
 
@@ -296,22 +319,44 @@ export default class StarterVillage {
 
         const pillarGeometry = new THREE.CylinderGeometry(pillarRadius, pillarRadius * 1.3, pillarHeight, 8);
         
-        const leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
-        leftPillar.position.set(x, pillarHeight / 2, z - width / 2);
-        leftPillar.castShadow = true;
-        leftPillar.receiveShadow = true;
-        this.scene.add(leftPillar);
-        this.walls.push(leftPillar);
+        let leftPillar, rightPillar;
+        if (isHorizontal) {
+            leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+            leftPillar.position.set(x, pillarHeight / 2, z - width / 2);
+            leftPillar.castShadow = true;
+            leftPillar.receiveShadow = true;
+            this.scene.add(leftPillar);
+            this.walls.push(leftPillar);
 
-        const rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
-        rightPillar.position.set(x, pillarHeight / 2, z + width / 2);
-        rightPillar.castShadow = true;
-        rightPillar.receiveShadow = true;
-        this.scene.add(rightPillar);
-        this.walls.push(rightPillar);
+            rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+            rightPillar.position.set(x, pillarHeight / 2, z + width / 2);
+            rightPillar.castShadow = true;
+            rightPillar.receiveShadow = true;
+            this.scene.add(rightPillar);
+            this.walls.push(rightPillar);
+        } else {
+            leftPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+            leftPillar.position.set(x - width / 2, pillarHeight / 2, z);
+            leftPillar.castShadow = true;
+            leftPillar.receiveShadow = true;
+            this.scene.add(leftPillar);
+            this.walls.push(leftPillar);
+
+            rightPillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+            rightPillar.position.set(x + width / 2, pillarHeight / 2, z);
+            rightPillar.castShadow = true;
+            rightPillar.receiveShadow = true;
+            this.scene.add(rightPillar);
+            this.walls.push(rightPillar);
+        }
 
         const archHeight = 0.4;
-        const archGeometry = new THREE.BoxGeometry(0.3, archHeight, width + pillarRadius * 2);
+        let archGeometry;
+        if (isHorizontal) {
+            archGeometry = new THREE.BoxGeometry(0.3, archHeight, width + pillarRadius * 2);
+        } else {
+            archGeometry = new THREE.BoxGeometry(width + pillarRadius * 2, archHeight, 0.3);
+        }
         const archMaterial = new THREE.MeshLambertMaterial({ color: 0x8b4513 });
         const arch = new THREE.Mesh(archGeometry, archMaterial);
         arch.position.set(x, pillarHeight + archHeight / 2, z);
@@ -320,10 +365,12 @@ export default class StarterVillage {
         this.scene.add(arch);
         this.walls.push(arch);
 
-        this.createGateSign(x, z, pillarHeight + archHeight);
+        if (hasSign) {
+            this.createGateSign(x, z, pillarHeight + archHeight, isHorizontal);
+        }
     }
 
-    createGateSign(x, z, signHeight) {
+    createGateSign(x, z, signHeight, isHorizontal = true) {
         const createSignTexture = () => {
             const canvas = document.createElement('canvas');
             canvas.width = 512;
@@ -354,19 +401,28 @@ export default class StarterVillage {
             side: THREE.FrontSide
         });
         const signFront = new THREE.Mesh(signGeometry, frontMaterial);
-        signFront.position.set(x + 0.15, signHeight + 0.4, z);
-        signFront.rotation.y = Math.PI / 2;
-        this.scene.add(signFront);
-        this.walls.push(signFront);
-
+        
         const backTexture = createSignTexture();
         const backMaterial = new THREE.MeshBasicMaterial({ 
             map: backTexture,
             side: THREE.FrontSide
         });
         const signBack = new THREE.Mesh(signGeometry, backMaterial);
-        signBack.position.set(x - 0.15, signHeight + 0.4, z);
-        signBack.rotation.y = -Math.PI / 2;
+
+        if (isHorizontal) {
+            signFront.position.set(x + 0.15, signHeight + 0.4, z);
+            signFront.rotation.y = Math.PI / 2;
+            signBack.position.set(x - 0.15, signHeight + 0.4, z);
+            signBack.rotation.y = -Math.PI / 2;
+        } else {
+            signFront.position.set(x, signHeight + 0.4, z + 0.15);
+            signFront.rotation.y = 0;
+            signBack.position.set(x, signHeight + 0.4, z - 0.15);
+            signBack.rotation.y = Math.PI;
+        }
+
+        this.scene.add(signFront);
+        this.walls.push(signFront);
         this.scene.add(signBack);
         this.walls.push(signBack);
     }
@@ -665,7 +721,20 @@ export default class StarterVillage {
             { x: 18, z: 18 },
             { x: 22, z: 14 },
             { x: 14, z: 22 },
-            { x: 20, z: 24 }
+            { x: 20, z: 24 },
+            // 地图中部树木（村庄和野区之间的区域）
+            { x: -10, z: 0 },
+            { x: -5, z: -2 },
+            { x: 0, z: 0 },
+            { x: 5, z: -3 },
+            { x: -15, z: 2 },
+            { x: -8, z: 5 },
+            { x: 2, z: 4 },
+            { x: 8, z: 2 },
+            { x: -12, z: -3 },
+            { x: 3, z: -5 },
+            { x: -3, z: 3 },
+            { x: 6, z: 0 }
         ];
 
         treePositions.forEach((pos, index) => {
@@ -732,7 +801,18 @@ export default class StarterVillage {
             { x: 8, z: 20, s: 0.8 },
             { x: 16, z: 16, s: 0.7 },
             { x: 22, z: 20, s: 1.1 },
-            { x: 12, z: 24, s: 0.9 }
+            { x: 12, z: 24, s: 0.9 },
+            // 地图中部岩石（村庄和野区之间的区域）
+            { x: -10, z: -2, s: 0.7 },
+            { x: -5, z: 2, s: 0.5 },
+            { x: 0, z: -3, s: 0.8 },
+            { x: 5, z: 0, s: 0.6 },
+            { x: -12, z: 3, s: 0.9 },
+            { x: -8, z: -4, s: 0.7 },
+            { x: 2, z: 2, s: 0.5 },
+            { x: 8, z: -2, s: 0.8 },
+            { x: -3, z: -1, s: 0.6 },
+            { x: 3, z: 3, s: 0.7 }
         ];
 
         rockPositions.forEach(pos => {
@@ -767,6 +847,33 @@ export default class StarterVillage {
         for (let i = 0; i < 25; i++) {
             const x = (Math.random() - 0.5) * 35;
             const z = -5 - Math.random() * 22; // 只在北侧野区生成 (z < -5)
+
+            const grassGroup = new THREE.Group();
+            grassGroup.position.set(x, 0, z);
+
+            // 创建几簇草叶
+            for (let j = 0; j < 3 + Math.floor(Math.random() * 3); j++) {
+                const grassGeometry = new THREE.ConeGeometry(0.05, 0.3 + Math.random() * 0.2, 4);
+                const grassMaterial = new THREE.MeshLambertMaterial({ color: 0x4a7c4a });
+                const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+                grass.position.set(
+                    (Math.random() - 0.5) * 0.3,
+                    0,
+                    (Math.random() - 0.5) * 0.3
+                );
+                grass.rotation.y = Math.random() * Math.PI * 2;
+                grass.rotation.z = (Math.random() - 0.5) * 0.3;
+                grassGroup.add(grass);
+            }
+
+            this.scene.add(grassGroup);
+            this.decorations.push(grassGroup);
+        }
+
+        // 地图中部草丛装饰
+        for (let i = 0; i < 20; i++) {
+            const x = (Math.random() - 0.5) * 30;
+            const z = -5 + Math.random() * 10; // 地图中部区域 (z 在 -5 到 5 之间)
 
             const grassGroup = new THREE.Group();
             grassGroup.position.set(x, 0, z);
@@ -1010,14 +1117,17 @@ export default class StarterVillage {
         if (!this.fenceBounds) return null;
 
         const fb = this.fenceBounds;
-        const gateCenterZ = (fb.minZ + fb.maxZ) / 2;
+        const eastGateCenterZ = (fb.minZ + fb.maxZ) / 2;
+        const northGateCenterX = (fb.minX + fb.maxX) / 2;
         const gateHalfWidth = 1.5;
         const collisionMargin = playerRadius + 0.3;
 
         const inZRange = position.z >= fb.minZ && position.z <= fb.maxZ;
         const inXRange = position.x >= fb.minX && position.x <= fb.maxX;
-        const nearGate = position.z >= gateCenterZ - gateHalfWidth && 
-                        position.z <= gateCenterZ + gateHalfWidth;
+        const nearEastGate = position.z >= eastGateCenterZ - gateHalfWidth && 
+                           position.z <= eastGateCenterZ + gateHalfWidth;
+        const nearNorthGate = position.x >= northGateCenterX - gateHalfWidth && 
+                            position.x <= northGateCenterX + gateHalfWidth;
 
         if (position.x > fb.minX - collisionMargin && position.x < fb.minX + collisionMargin && inZRange) {
             return {
@@ -1029,7 +1139,7 @@ export default class StarterVillage {
         }
 
         if (position.x > fb.maxX - collisionMargin && position.x < fb.maxX + collisionMargin && inZRange) {
-            if (!nearGate) {
+            if (!nearEastGate) {
                 return {
                     name: '篱笆',
                     type: 'right',
@@ -1049,12 +1159,14 @@ export default class StarterVillage {
         }
 
         if (position.z > fb.maxZ - collisionMargin && position.z < fb.maxZ + collisionMargin && inXRange) {
-            return {
-                name: '篱笆',
-                type: 'top',
-                fenceZ: fb.maxZ,
-                insideVillage: position.z < fb.maxZ
-            };
+            if (!nearNorthGate) {
+                return {
+                    name: '篱笆',
+                    type: 'top',
+                    fenceZ: fb.maxZ,
+                    insideVillage: position.z < fb.maxZ
+                };
+            }
         }
 
         return null;
